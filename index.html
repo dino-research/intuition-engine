@@ -4,623 +4,596 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Vòng Tròn Đơn Vị — Intuition Engine</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
-  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #0e0e10;
+      background: #0a0a0e;
       color: #e4e4e7;
-      min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
       -webkit-user-select: none;
       user-select: none;
-      overflow-x: hidden;
+      overflow: hidden;
     }
-    header {
-      width: 100%;
+
+    /* Challenge banner */
+    .challenge {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 10;
       text-align: center;
-      padding: 12px 16px;
-      background: #18181b;
-      border-bottom: 1px solid #27272a;
+      padding: 16px 20px;
+      background: rgba(10,10,14,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid #1e1e24;
+      transition: all 0.4s ease;
     }
-    header h1 {
-      font-size: 1.25rem;
-      font-weight: 600;
-      color: #a78bfa;
+    .challenge h2 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #fbbf24;
+      margin-bottom: 4px;
+      transition: all 0.3s;
     }
-    header p {
-      font-size: 0.8rem;
+    .challenge p {
+      font-size: 0.82rem;
       color: #71717a;
-      margin-top: 2px;
+      max-width: 400px;
+      margin: 0 auto;
+      line-height: 1.4;
     }
-    .main {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 16px;
-      padding: 16px;
-      width: 100%;
-      max-width: 1100px;
-      justify-content: center;
-    }
-    /* SVG container */
-    .circle-wrap {
-      flex: 0 0 auto;
+    .challenge.celebrate h2 { color: #34d399; }
+    .challenge.celebrate p { color: #a1a1aa; }
+
+    /* SVG */
+    .canvas-wrap {
+      flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
+      width: 100%;
+      max-width: 500px;
+      padding-top: 100px;
     }
-    #unit-circle {
-      width: 420px;
-      height: 420px;
-      max-width: 90vw;
-      max-height: 90vw;
-      cursor: grab;
+    svg#circle {
+      width: 90vw;
+      height: 90vw;
+      max-width: 440px;
+      max-height: 440px;
       touch-action: none;
+      cursor: grab;
     }
-    #unit-circle:active { cursor: grabbing; }
-    /* Side panels */
-    .side {
-      flex: 1 1 260px;
+    svg#circle:active { cursor: grabbing; }
+
+    /* Value readout */
+    .readout {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
       display: flex;
-      flex-direction: column;
-      gap: 12px;
-      min-width: 0;
-    }
-    /* Value panel */
-    .values {
-      background: #18181b;
+      gap: 16px;
+      padding: 10px 20px;
+      background: rgba(24,24,28,0.95);
+      backdrop-filter: blur(12px);
       border: 1px solid #27272a;
-      border-radius: 10px;
-      padding: 14px 16px;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      opacity: 0;
+      transition: opacity 0.5s ease, transform 0.5s ease;
+      transform: translateX(-50%) translateY(10px);
+      white-space: nowrap;
     }
-    .values h3 {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: #71717a;
-      margin-bottom: 10px;
+    .readout.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
     }
-    .val-row {
+    .readout .val {
       display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      padding: 6px 0;
-      border-bottom: 1px solid #1f1f23;
+      align-items: center;
+      gap: 6px;
     }
-    .val-row:last-child { border-bottom: none; }
-    .val-label { font-size: 0.9rem; }
-    .val-num {
-      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    .readout .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .readout .v-val {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-weight: 700;
+      font-size: 1rem;
+      min-width: 52px;
+      text-align: right;
+    }
+    .readout .angle-val {
+      color: #71717a;
+      font-size: 0.8rem;
+      margin-left: 8px;
+      padding-left: 12px;
+      border-left: 1px solid #27272a;
+    }
+
+    /* Next button */
+    .next-btn {
+      display: none;
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #a78bfa;
+      color: #0a0a0e;
+      font-weight: 700;
       font-size: 0.95rem;
-      font-weight: 600;
+      border: none;
+      padding: 12px 32px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      animation: pulse 2s ease-in-out infinite;
     }
-    .val-num.sin { color: #f87171; }
-    .val-num.cos { color: #60a5fa; }
-    .val-num.tan { color: #34d399; }
-    .val-num.angle { color: #fbbf24; }
-    /* Socratic panel */
-    .questions {
+    .next-btn:hover { background: #c4b5fd; transform: translateX(-50%) scale(1.05); }
+    .next-btn.show { display: block; }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(167,139,250,0.4); }
+      50% { box-shadow: 0 0 0 12px rgba(167,139,250,0); }
+    }
+
+    /* Phase indicator dots */
+    .phase-dots {
+      position: fixed;
+      top: 110px;
+      right: 20px;
       display: flex;
       flex-direction: column;
       gap: 8px;
     }
-    .q-card {
+    .phase-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #27272a;
+      transition: all 0.3s;
+    }
+    .phase-dot.active { background: #a78bfa; box-shadow: 0 0 8px #a78bfa80; }
+    .phase-dot.done { background: #34d399; }
+
+    /* Celebration overlay */
+    .celeb {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(10,10,14,0.7);
+      backdrop-filter: blur(4px);
+      z-index: 20;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s;
+    }
+    .celeb.show { opacity: 1; pointer-events: auto; }
+    .celeb-card {
       background: #18181b;
       border: 1px solid #27272a;
-      border-radius: 10px;
-      overflow: hidden;
-    }
-    .q-header {
-      padding: 12px 14px;
-      cursor: pointer;
-      font-size: 0.85rem;
-      font-weight: 500;
-      color: #e4e4e7;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      transition: background 0.15s;
-    }
-    .q-header:hover { background: #1e1e22; }
-    .q-arrow {
-      transition: transform 0.2s;
-      font-size: 0.7rem;
-      color: #52525b;
-    }
-    .q-card.open .q-arrow { transform: rotate(90deg); }
-    .q-body {
-      max-height: 0;
-      overflow: hidden;
-      transition: max-height 0.3s ease;
-    }
-    .q-card.open .q-body { max-height: 300px; }
-    .q-body-inner {
-      padding: 0 14px 14px;
-    }
-    .q-body-inner p {
-      font-size: 0.82rem;
-      color: #a1a1aa;
-      line-height: 1.5;
-      margin-bottom: 8px;
-    }
-    .hint-btn {
-      display: inline-block;
-      background: #27272a;
-      border: none;
-      color: #a78bfa;
-      font-size: 0.8rem;
-      padding: 5px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      margin-top: 4px;
-      transition: background 0.15s;
-    }
-    .hint-btn:hover { background: #3f3f46; }
-    .hint-text {
-      display: none;
-      font-size: 0.8rem;
-      color: #c4b5fd;
-      margin-top: 8px;
-      padding: 8px 10px;
-      background: #1e1b2e;
-      border-radius: 6px;
-      border-left: 3px solid #a78bfa;
-      line-height: 1.5;
-    }
-    .hint-text.visible { display: block; }
-    /* Angle display inside SVG */
-    .katex { font-size: 0.9rem; }
-    /* Keyboard hint */
-    .keyboard-hint {
-      font-size: 0.7rem;
-      color: #52525b;
+      border-radius: 16px;
+      padding: 32px 28px;
+      max-width: 340px;
       text-align: center;
-      padding: 4px;
+      transform: scale(0.9);
+      transition: transform 0.4s ease;
+    }
+    .celeb.show .celeb-card { transform: scale(1); }
+    .celeb-card .emoji { font-size: 2.5rem; margin-bottom: 12px; }
+    .celeb-card h3 { color: #34d399; font-size: 1.2rem; margin-bottom: 8px; }
+    .celeb-card p { color: #a1a1aa; font-size: 0.85rem; line-height: 1.6; }
+    .celeb-card button {
+      margin-top: 16px;
+      background: #a78bfa;
+      color: #0a0a0e;
+      font-weight: 600;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
     }
 
-    @media (max-width: 750px) {
-      .main { flex-direction: column; align-items: center; padding: 12px 8px; }
-      #unit-circle { width: 320px; height: 320px; }
-      .side { width: 100%; max-width: 400px; }
+    @media (max-width: 500px) {
+      .challenge h2 { font-size: 1rem; }
+      .challenge p { font-size: 0.75rem; }
+      .readout { font-size: 0.8rem; gap: 10px; padding: 8px 14px; }
+      .phase-dots { right: 12px; top: 90px; }
+      .celeb-card { margin: 0 16px; padding: 24px 20px; }
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>🔵 Vòng Tròn Đơn Vị</h1>
-    <p>Kéo điểm trên vòng tròn · Khám phá lượng giác bằng trực giác</p>
-  </header>
 
-  <div class="main">
-    <!-- SVG Canvas -->
-    <div class="circle-wrap">
-      <svg id="unit-circle" viewBox="-1.4 -1.4 2.8 2.8" xmlns="http://www.w3.org/2000/svg">
-        <!-- Background grid hint -->
-        <defs>
-          <pattern id="smallGrid" width="0.25" height="0.25" patternUnits="userSpaceOnUse">
-            <path d="M 0.25 0 L 0 0 0 0.25" fill="none" stroke="#1f1f23" stroke-width="0.01"/>
-          </pattern>
-          <marker id="arrowhead" markerWidth="0.05" markerHeight="0.04" refX="0.04" refY="0.02" orient="auto">
-            <polygon points="0 0, 0.05 0.02, 0 0.04" fill="#71717a"/>
-          </marker>
-          <marker id="arrow-sin" markerWidth="0.05" markerHeight="0.04" refX="0.04" refY="0.02" orient="auto">
-            <polygon points="0 0, 0.05 0.02, 0 0.04" fill="#f87171"/>
-          </marker>
-          <marker id="arrow-cos" markerWidth="0.05" markerHeight="0.04" refX="0.04" refY="0.02" orient="auto">
-            <polygon points="0 0, 0.05 0.02, 0 0.04" fill="#60a5fa"/>
-          </marker>
-        </defs>
+<!-- Challenge Banner -->
+<div class="challenge" id="challenge">
+  <h2 id="ch-title">🎯 Thử thách 1</h2>
+  <p id="ch-desc">Kéo điểm màu tím lên vị trí CAO NHẤT có thể</p>
+</div>
 
-        <!-- Grid -->
-        <rect x="-1.3" y="-1.3" width="2.6" height="2.6" fill="url(#smallGrid)"/>
+<!-- Phase dots -->
+<div class="phase-dots">
+  <div class="phase-dot active" id="pd0"></div>
+  <div class="phase-dot" id="pd1"></div>
+  <div class="phase-dot" id="pd2"></div>
+  <div class="phase-dot" id="pd3"></div>
+</div>
 
-        <!-- Axes -->
-        <line x1="-1.2" y1="0" x2="1.2" y2="0" stroke="#3f3f46" stroke-width="0.012" marker-end="url(#arrowhead)"/>
-        <line x1="0" y1="-1.2" x2="0" y2="1.2" stroke="#3f3f46" stroke-width="0.012" marker-end="url(#arrowhead)"/>
+<!-- SVG Canvas -->
+<div class="canvas-wrap">
+  <svg id="circle" viewBox="-1.5 -1.5 3 3" xmlns="http://www.w3.org/2000/svg">
+    <!-- Axes -->
+    <line x1="-1.3" y1="0" x2="1.3" y2="0" stroke="#27272a" stroke-width="0.01"/>
+    <line x1="0" y1="-1.3" x2="0" y2="1.3" stroke="#27272a" stroke-width="0.01"/>
 
-        <!-- Tick labels -->
-        <text x="1.05" y="0.08" fill="#71717a" font-size="0.09" text-anchor="middle">1</text>
-        <text x="-1.05" y="0.08" fill="#71717a" font-size="0.09" text-anchor="middle">−1</text>
-        <text x="0.08" y="-1.05" fill="#71717a" font-size="0.09" text-anchor="start">1</text>
-        <text x="0.08" y="1.08" fill="#71717a" font-size="0.09" text-anchor="start">−1</text>
-        <text x="0.06" y="0.08" fill="#52525b" font-size="0.07" text-anchor="start">O</text>
+    <!-- Unit circle -->
+    <circle cx="0" cy="0" r="1" fill="none" stroke="#3f3f46" stroke-width="0.015"/>
 
-        <!-- Axis labels -->
-        <text x="1.15" y="0.12" fill="#71717a" font-size="0.09" font-style="italic">x</text>
-        <text x="0.07" y="-1.15" fill="#71717a" font-size="0.09" font-style="italic">y</text>
+    <!-- sin projection line (hidden in phase 0) -->
+    <line id="sin-line" stroke="#f87171" stroke-width="0.03" stroke-linecap="round" opacity="0"/>
 
-        <!-- Unit circle -->
-        <circle cx="0" cy="0" r="1" fill="none" stroke="#52525b" stroke-width="0.015"/>
+    <!-- cos projection line (hidden until phase 2) -->
+    <line id="cos-line" stroke="#60a5fa" stroke-width="0.03" stroke-linecap="round" opacity="0"/>
 
-        <!-- Quadrant color hints -->
-        <path d="M 0 0 L 1 0 A 1 1 0 0 1 0 1 Z" fill="#f8717108" />
-        <path d="M 0 0 L 0 1 A 1 1 0 0 1 -1 0 Z" fill="#60a5fa08" />
-        <path d="M 0 0 L -1 0 A 1 1 0 0 1 0 -1 Z" fill="#34d39908" />
-        <path d="M 0 0 L 0 -1 A 1 1 0 0 1 1 0 Z" fill="#fbbf2408" />
+    <!-- Radius line -->
+    <line id="radius" stroke="#a1a1aa" stroke-width="0.012" opacity="0.4"/>
 
-        <!-- Dynamic elements (updated by JS) -->
-        <!-- Angle arc -->
-        <path id="angle-arc" fill="none" stroke="#fbbf24" stroke-width="0.02" opacity="0.7"/>
+    <!-- Draggable point -->
+    <circle id="point" cx="1" cy="0" r="0.08" fill="#a78bfa" style="cursor:grab;">
+      <animate attributeName="r" values="0.08;0.1;0.08" dur="2s" repeatCount="indefinite"/>
+    </circle>
+    <circle id="point-glow" cx="1" cy="0" r="0.14" fill="none" stroke="#a78bfa40" stroke-width="0.02">
+      <animate attributeName="r" values="0.14;0.18;0.14" dur="2s" repeatCount="indefinite"/>
+    </circle>
 
-        <!-- Radius line -->
-        <line id="radius-line" stroke="#a1a1aa" stroke-width="0.015" opacity="0.6"/>
+    <!-- Angle arc -->
+    <path id="arc" fill="none" stroke="#fbbf24" stroke-width="0.02" opacity="0"/>
 
-        <!-- sin line (vertical projection) -->
-        <line id="sin-line" stroke="#f87171" stroke-width="0.025" stroke-linecap="round"/>
-        <text id="sin-label" fill="#f87171" font-size="0.08" font-weight="600"></text>
+    <!-- Labels -->
+    <text id="sin-tick" x="1.08" y="0" fill="#f87171" font-size="0.08" font-weight="600" opacity="0">1</text>
+    <text id="cos-tick" x="0" y="-1.08" fill="#60a5fa" font-size="0.08" font-weight="600" opacity="0">1</text>
+    <text id="val-label" x="0" y="0" fill="#ffffff" font-size="0.12" font-weight="700" text-anchor="middle" opacity="0"></text>
+  </svg>
+</div>
 
-        <!-- cos line (horizontal projection) -->
-        <line id="cos-line" stroke="#60a5fa" stroke-width="0.025" stroke-linecap="round"/>
-        <text id="cos-label" fill="#60a5fa" font-size="0.08" font-weight="600"></text>
-
-        <!-- tan line -->
-        <line id="tan-line" stroke="#34d399" stroke-width="0.02" stroke-linecap="round" stroke-dasharray="0.04,0.03"/>
-        <text id="tan-label" fill="#34d399" font-size="0.08" font-weight="600"></text>
-
-        <!-- Draggable point -->
-        <circle id="drag-point" cx="1" cy="0" r="0.055" fill="#a78bfa" stroke="#0e0e10" stroke-width="0.015" style="cursor:grab;"/>
-        <circle id="drag-point-outer" cx="1" cy="0" r="0.075" fill="none" stroke="#a78bfa30" stroke-width="0.01"/>
-
-        <!-- Starting point marker -->
-        <circle cx="1" cy="0" r="0.025" fill="#71717a"/>
-
-        <!-- Angle label (top of SVG) -->
-        <text id="angle-display" x="0" y="-1.18" fill="#fbbf24" font-size="0.09" text-anchor="middle" font-weight="600"></text>
-      </svg>
-    </div>
-
-    <!-- Values Panel -->
-    <div class="side">
-      <div class="values">
-        <h3>Giá trị</h3>
-        <div class="val-row">
-          <span class="val-label">Góc θ</span>
-          <span class="val-num angle" id="val-angle">0° = 0 rad</span>
-        </div>
-        <div class="val-row">
-          <span class="val-label" style="color:#f87171;">sin(θ)</span>
-          <span class="val-num sin" id="val-sin">0.0000</span>
-        </div>
-        <div class="val-row">
-          <span class="val-label" style="color:#60a5fa;">cos(θ)</span>
-          <span class="val-num cos" id="val-cos">1.0000</span>
-        </div>
-        <div class="val-row">
-          <span class="val-label" style="color:#34d399;">tan(θ)</span>
-          <span class="val-num tan" id="val-tan">0.0000</span>
-        </div>
-      </div>
-
-      <!-- Socratic Questions -->
-      <div class="questions">
-        <div class="q-card" id="q1">
-          <div class="q-header" onclick="toggleQ('q1')">
-            <span>❓ sin(θ) thay đổi thế nào khi kéo điểm?</span>
-            <span class="q-arrow">▸</span>
-          </div>
-          <div class="q-body">
-            <div class="q-body-inner">
-              <p>Kéo điểm chạy quanh vòng tròn. Quan sát đường màu đỏ (sin) — nó dài ra, co lại, đổi hướng thế nào?</p>
-              <button class="hint-btn" onclick="showHint('q1','hint1a')">💡 Gợi ý 1</button>
-              <div class="hint-text" id="q1-hint1a">Nhìn độ dài đường màu đỏ trong các góc phần tư khác nhau dương hay âm?</div>
-              <button class="hint-btn" onclick="showHint('q1','hint1b')">💡 Gợi ý 2</button>
-              <div class="hint-text" id="q1-hint1b">sin(θ) = tọa độ y của điểm trên vòng tròn! Điểm ở trên trục x → sin > 0. Điểm ở dưới trục x → sin < 0.</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="q-card" id="q2">
-          <div class="q-header" onclick="toggleQ('q2')">
-            <span>❓ Tại sao sin(−30°) = −sin(30°)?</span>
-            <span class="q-arrow">▸</span>
-          </div>
-          <div class="q-body">
-            <div class="q-body-inner">
-              <p>Thử kéo điểm đến 30° rồi đến −30°. So sánh vị trí của chúng.</p>
-              <button class="hint-btn" onclick="showHint('q2','hint2a')">💡 Gợi ý 1</button>
-              <div class="hint-text" id="q2-hint2a">Hai điểm này đối xứng nhau qua trục nào? Trục hoành (trục x)!</div>
-              <button class="hint-btn" onclick="showHint('q2','hint2b')">💡 Gợi ý 2</button>
-              <div class="hint-text" id="q2-hint2b">Khi đối xứng qua trục x, tọa độ y đổi dấu. Mà sin = tọa độ y → sin đổi dấu. Đó là lý do sin(-θ) = −sin(θ)!</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="q-card" id="q3">
-          <div class="q-header" onclick="toggleQ('q3')">
-            <span>❓ Tại sao tan(90°) không tồn tại?</span>
-            <span class="q-arrow">▸</span>
-          </div>
-          <div class="q-body">
-            <div class="q-body-inner">
-              <p>Thử kéo điểm đến gần 90°. Nhìn đường tan (xanh lá, nét đứt).</p>
-              <button class="hint-btn" onclick="showHint('q3','hint3a')">💡 Gợi ý 1</button>
-              <div class="hint-text" id="q3-hint3a">Khi θ tiến đến 90°, điểm tiến đến (0, 1) — đỉnh vòng tròn. Đường tan chạy dọc theo trục tung, dài vô tận!</div>
-              <button class="hint-btn" onclick="showHint('q3','hint3b')">💡 Gợi ý 2</button>
-              <div class="hint-text" id="q3-hint3b">tan(θ) = sin(θ)/cos(θ). Khi θ → 90°, cos(θ) → 0 → chia cho 0 → không xác định! Đây là lý do tan(90°) = ∞.</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <p class="keyboard-hint">💡 Dùng phím ← → để chỉnh góc chính xác · Space để đặt lại về 0°</p>
-    </div>
+<!-- Readout -->
+<div class="readout" id="readout">
+  <div class="val">
+    <span class="dot" style="background:#f87171;" id="dot-sin"></span>
+    <span>sin</span>
+    <span class="v-val" style="color:#f87171;" id="rv-sin">0.00</span>
   </div>
+  <div class="val" id="cos-val-wrap">
+    <span class="dot" style="background:#60a5fa;" id="dot-cos"></span>
+    <span>cos</span>
+    <span class="v-val" style="color:#60a5fa;" id="rv-cos">1.00</span>
+  </div>
+  <span class="angle-val" id="rv-angle">0°</span>
+</div>
+
+<!-- Next button -->
+<button class="next-btn" id="next-btn" onclick="nextPhase()">Tiếp tục ▸</button>
+
+<!-- Celebration card -->
+<div class="celeb" id="celeb">
+  <div class="celeb-card">
+    <div class="emoji" id="celeb-emoji">🎉</div>
+    <h3 id="celeb-title">Quá đúng!</h3>
+    <p id="celeb-text"></p>
+    <button onclick="dismissCeleb(); nextPhase();">Tiếp tục ▸</button>
+  </div>
+</div>
 
 <script>
 (function() {
   'use strict';
 
-  // === State ===
-  let angle = 0; // in radians
-  const RADIUS = 1;
-  const svg = document.getElementById('unit-circle');
-  const vb = svg.viewBox.baseVal;
-
   // === Elements ===
-  const dragPoint = document.getElementById('drag-point');
-  const dragPointOuter = document.getElementById('drag-point-outer');
-  const radiusLine = document.getElementById('radius-line');
-  const angleArc = document.getElementById('angle-arc');
+  const svg = document.getElementById('circle');
+  const point = document.getElementById('point');
+  const pointGlow = document.getElementById('point-glow');
+  const radius = document.getElementById('radius');
   const sinLine = document.getElementById('sin-line');
   const cosLine = document.getElementById('cos-line');
-  const tanLine = document.getElementById('tan-line');
-  const sinLabel = document.getElementById('sin-label');
-  const cosLabel = document.getElementById('cos-label');
-  const tanLabel = document.getElementById('tan-label');
-  const angleDisplay = document.getElementById('angle-display');
-  const valAngle = document.getElementById('val-angle');
-  const valSin = document.getElementById('val-sin');
-  const valCos = document.getElementById('val-cos');
-  const valTan = document.getElementById('val-tan');
+  const arc = document.getElementById('arc');
+  const sinTick = document.getElementById('sin-tick');
+  const cosTick = document.getElementById('cos-tick');
+  const valLabel = document.getElementById('val-label');
 
-  // === Utility ===
-  function toSvgCoords(clientX, clientY) {
-    const pt = svg.createSVGPoint();
-    pt.x = clientX;
-    pt.y = clientY;
+  const readout = document.getElementById('readout');
+  const rvSin = document.getElementById('rv-sin');
+  const rvCos = document.getElementById('rv-cos');
+  const rvAngle = document.getElementById('rv-angle');
+  const cosValWrap = document.getElementById('cos-val-wrap');
+  const dotSin = document.getElementById('dot-sin');
+  const dotCos = document.getElementById('dot-cos');
+  const nextBtn = document.getElementById('next-btn');
+
+  const chTitle = document.getElementById('ch-title');
+  const chDesc = document.getElementById('ch-desc');
+  const challenge = document.getElementById('challenge');
+
+  const celeb = document.getElementById('celeb');
+  const celebEmoji = document.getElementById('celeb-emoji');
+  const celebTitle = document.getElementById('celeb-title');
+  const celebText = document.getElementById('celeb-text');
+
+  // === State ===
+  let angle = 0;
+  let phase = 0;
+  let dragging = false;
+  let discovery = { sinMax: false, sinNeg: false, cosSin: false, sinOne: false };
+  let phase2Timer = null;
+
+  // === Phase definitions ===
+  const phases = [
+    { // 0: Free exploration
+      title: '👋 Chào bạn!',
+      desc: 'Kéo điểm màu tím xoay quanh vòng tròn. Cứ kéo thử đi!',
+    },
+    { // 1: Discover sin = height
+      title: '🎯 Thử thách 1',
+      desc: 'Kéo điểm lên vị trí CAO NHẤT — và xem điều gì xảy ra',
+    },
+    { // 2: sin max = 1 — AHA! cos appears
+      title: '🎉 Tuyệt vời!',
+      desc: 'Độ cao lớn nhất = 1. Đây chính là sin(90°) = 1. Bây giờ thử kéo xuống THẤP NHẤT!',
+    },
+    { // 3: sin min = -1; reveal pattern
+      title: '🧠_pattern!',
+      desc: 'sin(θ) = tọa độ = độ cao của điểm! Vì sao nó không thể > 1?',
+    },
+  ];
+
+  function setPhase(i) {
+    if (i >= phases.length) return;
+    phase = i;
+    const p = phases[i];
+    chTitle.textContent = p.title;
+    chDesc.textContent = p.desc;
+    challenge.classList.remove('celebrate');
+    if (i >= 2) challenge.classList.add('celebrate');
+    // Phase dots
+    for (let j = 0; j < 4; j++) {
+      const d = document.getElementById('pd' + j);
+      d.classList.remove('active', 'done');
+      if (j < i) d.classList.add('done');
+      else if (j === i) d.classList.add('active');
+    }
+    // Phase behaviors
+    if (i === 1) {
+      sinLine.setAttribute('opacity', '1');
+      arc.setAttribute('opacity', '0.3');
+    }
+    if (i === 2) {
+      cosLine.setAttribute('opacity', '0.5');
+      cosValWrap.style.display = 'flex';
+      cosTick.setAttribute('opacity', '0.6');
+      dotCos.style.display = 'inline-block';
+    }
+    if (i === 2) {
+      discovery.sinNeg = false; // reset for phase 3
+    }
+  }
+
+  // Expose nextPhase globally
+  window.nextPhase = function() {
+    nextBtn.classList.remove('show');
+    if (phase < phases.length - 1) {
+      setPhase(phase + 1);
+    } else {
+      // All done — show final card
+      showCeleb('🎓', 'Bạn vừa khám phá ra bí mật!', 'sin(θ) và cos(θ) chỉ là tọa độ (y, x) của một điểm chạy trên vòng tròn bán kính 1. Đó là TOÀN BỘ lượng giác!');
+    }
+  };
+
+  // === Coordinate conversion ===
+  function toSvg(clientX, clientY) {
+    const p = svg.createSVGPoint();
+    p.x = clientX; p.y = clientY;
     const ctm = svg.getScreenCTM();
     if (!ctm) return { x: 0, y: 0 };
-    const svgP = pt.matrixTransform(ctm.inverse());
-    return svgP;
+    return p.matrixTransform(ctm.inverse());
   }
 
-  function normalizeAngle(a) {
-    while (a < -Math.PI) a += 2 * Math.PI;
-    while (a > Math.PI) a -= 2 * Math.PI;
-    return a;
-  }
-
-  function formatNum(n) {
-    if (Math.abs(n) < 0.00005) return '0';
-    if (Math.abs(n - 1) < 0.00005) return '1';
-    if (Math.abs(n + 1) < 0.00005) return '−1';
-    if (Math.abs(n - 0.5) < 0.00005) return '0.5';
-    if (Math.abs(n + 0.5) < 0.00005) return '−0.5';
-    const sign = n < 0 ? '−' : '';
-    const abs = Math.abs(n);
-    return sign + abs.toFixed(4).replace(/0+$/, '').replace(/\.$/, '');
-  }
-
-  function formatTan(n) {
-    if (Math.abs(n) > 100) return '∞';
-    return formatNum(n);
-  }
-
-  // === Arc path generator ===
-  function describeArc(cx, cy, r, startAngle, endAngle) {
-    const x1 = cx + r * Math.cos(startAngle);
-    const y1 = cy + r * Math.sin(startAngle);
-    const x2 = cx + r * Math.cos(endAngle);
-    const y2 = cy + r * Math.sin(endAngle);
-    const largeArc = Math.abs(endAngle - startAngle) > Math.PI ? 1 : 0;
-    const sweep = endAngle > startAngle ? 1 : 0;
-    return `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} ${sweep} ${x2} ${y2} Z`;
+  function handleDrag(cx, cy) {
+    const p = toSvg(cx, cy);
+    angle = Math.atan2(-p.y, p.x);
+    // Normalize to [-π, π]
+    while (angle < -Math.PI) angle += 2 * Math.PI;
+    while (angle > Math.PI) angle -= 2 * Math.PI;
+    render();
   }
 
   // === Render ===
-  function update() {
-    const cos = Math.cos(angle);
-    const sin = Math.sin(angle);
-    const tan = Math.tan(angle);
-    const tanAbs = Math.abs(tan);
+  function render() {
+    const cosA = Math.cos(angle);
+    const sinA = Math.sin(angle);
 
-    // Draggable point position
-    const px = cos;
-    const py = -sin; // SVG y is inverted
+    // Point
+    const px = cosA, py = -sinA; // SVG Y invert
+    point.setAttribute('cx', px);
+    point.setAttribute('cy', py);
+    pointGlow.setAttribute('cx', px);
+    pointGlow.setAttribute('cy', py);
 
-    dragPoint.setAttribute('cx', px);
-    dragPoint.setAttribute('cy', py);
-    dragPointOuter.setAttribute('cx', px);
-    dragPointOuter.setAttribute('cy', py);
+    // Radius
+    radius.setAttribute('x2', px);
+    radius.setAttribute('y2', py);
 
-    // Radius line
-    radiusLine.setAttribute('x1', 0);
-    radiusLine.setAttribute('y1', 0);
-    radiusLine.setAttribute('x2', px);
-    radiusLine.setAttribute('y2', py);
-
-    // Angle arc
-    if (Math.abs(angle) > 0.01) {
-      const startAngle = 0;
-      const endAngle = angle;
-      // In SVG, y is flipped, so we need to negate angles for arc rendering
-      const arcStart = 0;
-      const arcEnd = -angle;
-      angleArc.setAttribute('d', describeArc(0, 0, 0.22, Math.min(arcStart, arcEnd), Math.max(arcStart, arcEnd)));
-      angleArc.setAttribute('stroke-width', '0.02');
-      angleArc.setAttribute('opacity', '0.7');
-    } else {
-      angleArc.setAttribute('d', '');
-    }
-
-    // sin line: vertical from point to x-axis
+    // sin line (vertical: from point to x-axis)
     sinLine.setAttribute('x1', px);
     sinLine.setAttribute('y1', 0);
     sinLine.setAttribute('x2', px);
     sinLine.setAttribute('y2', py);
-    sinLine.setAttribute('opacity', Math.abs(sin) > 0.01 ? '1' : '0');
 
-    // cos line: horizontal from point to y-axis
+    // cos line (horizontal: from point to y-axis)
     cosLine.setAttribute('x1', 0);
     cosLine.setAttribute('y1', py);
     cosLine.setAttribute('x2', px);
     cosLine.setAttribute('y2', py);
-    cosLine.setAttribute('opacity', Math.abs(cos) > 0.01 ? '1' : '0');
 
-    // tan line: from (1, 0) to... 
-    // tan visualization: line perpendicular to x-axis at (1,0), going to where it intersects the extended radius
-    // The intersection point is at (1, -tan(angle))
-    const tanVisible = tanAbs < 50; // hide if too large
-    if (tanVisible && cos !== 0) {
-      const tanEndX = 1;
-      const tanEndY = -tan; // SVG y flip
-      tanLine.setAttribute('x1', 1);
-      tanLine.setAttribute('y1', 0);
-      tanLine.setAttribute('x2', tanEndX);
-      tanLine.setAttribute('y2', tanEndY);
-      tanLine.setAttribute('opacity', '1');
-
-      // Dashed line from (1,0) along x-axis to show the "base"
-      tanLabel.setAttribute('x', 1.06);
-      tanLabel.setAttribute('y', -tan / 2);
-      tanLabel.setAttribute('text-anchor', 'start');
-      tanLabel.setAttribute('dominant-baseline', 'middle');
-      tanLabel.textContent = 'tan';
-    } else {
-      tanLine.setAttribute('x1', 0);
-      tanLine.setAttribute('y1', 0);
-      tanLine.setAttribute('x2', 0);
-      tanLine.setAttribute('y2', 0);
-      tanLine.setAttribute('opacity', '0');
-      tanLabel.textContent = '';
+    // Angle arc
+    if (Math.abs(angle) > 0.02) {
+      arc.setAttribute('d', angleArc(0, 0, 0.2, 0, -angle));
     }
 
-    // sin label
-    if (Math.abs(sin) > 0.08) {
-      sinLabel.setAttribute('x', px > 0 ? px + 0.06 : px - 0.06);
-      sinLabel.setAttribute('y', py / 2);
-      sinLabel.setAttribute('text-anchor', px > 0 ? 'start' : 'end');
-      sinLabel.setAttribute('dominant-baseline', 'middle');
-      sinLabel.textContent = 'sin';
-    } else {
-      sinLabel.textContent = '';
+    // sin tick on y-axis
+    if (phase >= 1) {
+      sinTick.setAttribute('y', -1.08);
+      sinTick.setAttribute('x', 0.04);
+      sinTick.setAttribute('text-anchor', 'start');
+      if (Math.abs(sinA) > 0.95) {
+        // Highlight at max
+        valLabel.setAttribute('x', px > 0 ? -0.15 : 0.15);
+        valLabel.setAttribute('y', py / 2);
+        valLabel.setAttribute('text-anchor', px > 0 ? 'end' : 'start');
+        valLabel.setAttribute('dominant-baseline', 'middle');
+        valLabel.setAttribute('fill', '#34d399');
+        valLabel.setAttribute('opacity', '1');
+        valLabel.textContent = sinA > 0 ? 'sin = 1 ✓' : 'sin = −1 ✓';
+      } else {
+        valLabel.setAttribute('opacity', '0');
+      }
     }
 
-    // cos label
-    if (Math.abs(cos) > 0.08) {
-      cosLabel.setAttribute('x', px / 2);
-      cosLabel.setAttribute('y', py > 0 ? py + 0.08 : py - 0.06);
-      cosLabel.setAttribute('text-anchor', 'middle');
-      cosLabel.textContent = 'cos';
-    } else {
-      cosLabel.textContent = '';
+    // Readout values
+    rvSin.textContent = format(sinA);
+    rvCos.textContent = format(cosA);
+    const deg = angle * 180 / Math.PI;
+    rvAngle.textContent = deg.toFixed(0) + '°';
+
+    // Detect discoveries
+    checkDiscoveries(sinA, cosA, deg);
+  }
+
+  function angleArc(cx, cy, r, startAngle, endAngle) {
+    const x1 = cx + r * Math.cos(startAngle);
+    const y1 = cy + r * Math.sin(startAngle);
+    const x2 = cx + r * Math.cos(endAngle);
+    const y2 = cy + r * Math.sin(endAngle);
+    const large = Math.abs(endAngle - startAngle) > Math.PI ? 1 : 0;
+    const sweep = endAngle > startAngle ? 1 : 0;
+    return `M ${x1} ${y1} A ${r} ${r} 0 ${large} ${sweep} ${x2} ${y2}`;
+  }
+
+  function format(n) {
+    if (Math.abs(n) < 0.005) return '0';
+    if (Math.abs(n - 1) < 0.005) return '1';
+    if (Math.abs(n + 1) < 0.005) return '−1';
+    return (n > 0 ? '' : '−') + Math.abs(n).toFixed(2);
+  }
+
+  // === Discovery detection ===
+  function checkDiscoveries(sin, cos, deg) {
+    // Phase 1: Student reaches near the top (sin ~ 1)
+    if (phase === 1 && sin > 0.97) {
+      if (!discovery.sinMax) {
+        discovery.sinMax = true;
+        triggerAha(0);
+      }
     }
-
-    // Angle display at top
-    const deg = (angle * 180 / Math.PI);
-    angleDisplay.textContent = `${deg.toFixed(1)}° ≈ ${angle.toFixed(3)} rad`;
-
-    // Value panel
-    valAngle.textContent = `${deg.toFixed(1)}° = ${angle.toFixed(4)} rad`;
-    valSin.textContent = formatNum(sin);
-    valCos.textContent = formatNum(cos);
-    valTan.textContent = formatTan(tan);
+    // Phase 1 bonus: Student finds negative sin
+    if (phase === 1 && sin < -0.9) {
+      discovery.sinNeg = true;
+    }
+    // Phase 2: Student reaches bottom (sin ~ -1)
+    if (phase === 2 && sin < -0.97) {
+      if (!discovery.sinNeg) {
+        discovery.sinNeg = true;
+        triggerAha(1);
+      }
+    }
   }
 
-  // === Drag handling ===
-  let isDragging = false;
-
-  function startDrag(clientX, clientY) {
-    isDragging = true;
-    handleDrag(clientX, clientY);
+  function triggerAha(type) {
+    if (type === 0) {
+      // Reached top: sin max = 1
+      showCeleb('🎯', 'Độ cao lớn nhất = 1!',
+        'Điểm không thể đi xa hơn nữa vì vòng tròn có bán kính 1.\n\n' +
+        'Đây chính là **sin(90°) = 1**!\n\n' +
+        'sin(θ) = độ cao (tọa độ y) của điểm. Vì điểm nằm trên vòng tròn bán kính 1 nên sin KHÔNG BAO GIỜ lớn hơn 1!');
+    }
+    if (type === 1) {
+      // Reached bottom: sin min = -1
+      const nextBtnEl = document.getElementById('next-btn');
+      showCeleb('💡', 'sin(θ) luôn nằm trong [−1, 1]! Ừng! Ừng!',
+        'Kéo lên → sin dương. Kéo xuống → sin âm.\n\n' +
+        'Tại điểm thấp nhất: **sin(270°) = −1**\n\n' +
+        'Vì sao? Vì điểm không thể nằm NGOÀI vòng tròn! Bán kính = 1 → sin luôn trong [−1, 1] ' +
+        'Đó là lý do tại sao máy tính sin hay cho kết quả trong khoảng này!');
+    }
   }
 
-  function handleDrag(clientX, clientY) {
-    if (!isDragging) return;
-    const p = toSvgCoords(clientX, clientY);
-    // Compute angle from center (0,0)
-    // SVG y is inverted, so negate y
-    angle = normalizeAngle(Math.atan2(-p.y, p.x));
-    update();
+  // === Celebration card ===
+  function showCeleb(emoji, title, text) {
+    celebEmoji.textContent = emoji;
+    celebTitle.textContent = title;
+    celebText.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+    celeb.classList.add('show');
+    nextBtn.classList.add('show');
   }
 
-  function stopDrag() {
-    isDragging = false;
-  }
+  window.dismissCeleb = function() {
+    celeb.classList.remove('show');
+  };
 
-  // Mouse events
-  svg.addEventListener('mousedown', e => {
-    e.preventDefault();
-    startDrag(e.clientX, e.clientY);
-  });
-  window.addEventListener('mousemove', e => handleDrag(e.clientX, e.clientY));
-  window.addEventListener('mouseup', stopDrag);
+  // === Drag events ===
+  svg.addEventListener('mousedown', e => { dragging = true; handleDrag(e.clientX, e.clientY); });
+  window.addEventListener('mousemove', e => { if (dragging) handleDrag(e.clientX, e.clientY); });
+  window.addEventListener('mouseup', () => { dragging = false; });
 
-  // Touch events
-  svg.addEventListener('touchstart', e => {
-    e.preventDefault();
-    const t = e.touches[0];
-    startDrag(t.clientX, t.clientY);
-  }, { passive: false });
-  window.addEventListener('touchmove', e => {
-    if (!isDragging) return;
-    e.preventDefault();
-    const t = e.touches[0];
-    handleDrag(t.clientX, t.clientY);
-  }, { passive: false });
-  window.addEventListener('touchend', stopDrag);
+  svg.addEventListener('touchstart', e => { e.preventDefault(); dragging = true; const t = e.touches[0]; handleDrag(t.clientX, t.clientY); }, { passive: false });
+  window.addEventListener('touchmove', e => { if (!dragging) return; e.preventDefault(); const t = e.touches[0]; handleDrag(t.clientX, t.clientY); }, { passive: false });
+  window.addEventListener('touchend', () => { dragging = false; });
 
-  // Click on SVG (for non-drag, just place point)
-  svg.addEventListener('click', e => {
-    handleDrag(e.clientX, e.clientY);
-  });
-
-  // Keyboard
+  // === Keyboard ===
   window.addEventListener('keydown', e => {
-    if (e.key === 'ArrowLeft') {
-      angle = normalizeAngle(angle - Math.PI / 180);
-      update();
-      e.preventDefault();
-    } else if (e.key === 'ArrowRight') {
-      angle = normalizeAngle(angle + Math.PI / 180);
-      update();
-      e.preventDefault();
-    } else if (e.key === ' ') {
-      angle = 0;
-      update();
-      e.preventDefault();
-    } else if (e.key === 'ArrowUp') {
-      angle = normalizeAngle(angle + Math.PI / 36);
-      update();
-      e.preventDefault();
-    } else if (e.key === 'ArrowDown') {
-      angle = normalizeAngle(angle - Math.PI / 36);
-      update();
-      e.preventDefault();
-    }
+    if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { angle += Math.PI / 60; render(); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { angle -= Math.PI / 60; render(); e.preventDefault(); }
+    else if (e.key === ' ') { angle = 0; render(); e.preventDefault(); }
   });
 
-  // === Initialize ===
-  update();
+  // === Init ===
+  cosValWrap.style.display = 'none';
+  dotCos.style.display = 'none';
+  setPhase(0);
+  render();
+
+  // Auto-advance phase 0 after 8 seconds of dragging
+  const idleCheck = setInterval(() => {
+    if (phase === 0) {
+      setPhase(1);
+      readout.classList.add('visible');
+      clearInterval(idleCheck);
+    }
+  }, 8000);
+
+  // Detect first drag to start timer
+  const origHandleDrag = handleDrag;
+  let firstDrag = true;
+  let startIdleTimer = null;
+  const _orig = handleDrag;
+  // We need to wrap, but handleDrag is already set. Let's use a flag.
+  // Actually the check above (setInterval) handles auto-advance.
+  // Let's just listen for any drag and show readout immediately.
+  const addReadout = () => {
+    if (!readout.classList.contains('visible')) {
+      readout.classList.add('visible');
+    }
+  };
+  svg.addEventListener('mousedown', addReadout);
+  svg.addEventListener('touchstart', addReadout, { once: true });
+
 })();
-</script>
-
-<script>
-// UI helpers
-function toggleQ(id) {
-  const card = document.getElementById(id);
-  card.classList.toggle('open');
-}
-
-function showHint(qId, hintId) {
-  const hint = document.getElementById(qId + '-' + hintId);
-  hint.classList.toggle('visible');
-}
 </script>
 </body>
 </html>
