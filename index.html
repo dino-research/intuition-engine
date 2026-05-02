@@ -7,270 +7,178 @@
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f6;color:#1a1a1a;min-height:100dvh;display:flex;flex-direction:column;overflow:hidden;-webkit-user-select:none;user-select:none}
-    .topbar{position:fixed;top:0;left:0;right:0;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(250,249,246,.95);border-bottom:1px solid #e5e5e5}
+    .topbar{position:fixed;top:0;left:0;right:0;z-index:10;display:flex;align-items:center;padding:10px 16px;background:rgba(250,249,246,.95);border-bottom:1px solid #e5e5e5}
     .topbar .t{font-size:.95rem;font-weight:700;color:#7c3aed}
-    .topbar .st{text-align:right;font-size:.72rem;color:#6b7280}
-    .chal{position:fixed;top:50px;left:50%;transform:translateX(-50%);z-index:10;max-width:380px;width:90%;padding:10px 16px;background:#fff;border:1px solid #e5e7eb;border-radius:14px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,.06)}
-    .chal h3{font-size:.88rem;color:#7c3aed;margin-bottom:2px}
+    .steps{display:flex;gap:4px;margin-left:auto}
+    .step{width:28px;height:4px;border-radius:2px;background:#e5e7eb;transition:.3s}
+    .step.active{background:#7c3aed;width:40px}
+    .step.done{background:#22c55e}
+    .chal{position:fixed;top:50px;left:50%;transform:translateX(-50%);z-index:10;max-width:400px;width:90%;padding:14px 18px;background:#fff;border:1px solid #e5e7eb;border-radius:14px;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.08)}
+    .chal h3{font-size:.88rem;color:#7c3aed;margin-bottom:4px}
     .chal p{font-size:.73rem;color:#6b7280;line-height:1.4}
-    .cw{flex:1;display:flex;align-items:center;justify-content:center;padding:80px 8px 120px}
-    canvas{width:100%;max-width:500px;aspect-ratio:4/3;touch-action:none;border-radius:12px;overflow:hidden}
-    .bp{position:fixed;bottom:0;left:0;right:0;z-index:10;padding:12px 16px;background:rgba(250,249,246,.97);backdrop-filter:blur(8px);border-top:1px solid #e5e5e5}
-    .slider-wrap{display:flex;align-items:center;gap:12px;max-width:420px;margin:0 auto 8px}
-    .slider-wrap label{font-size:.82rem;color:#374151;white-space:nowrap;min-width:70px}
+    .goal{margin-top:8px;padding:6px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:.7rem;color:#15803d;font-weight:600}
+    .cw{flex:1;display:flex;align-items:center;justify-content:center;padding:130px 8px 160px}
+    canvas{width:100%;max-width:500px;aspect-ratio:4/3;touch-action:none;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.08)}
+    .bp{position:fixed;bottom:0;left:0;right:0;z-index:10;padding:10px 16px 14px;background:rgba(250,249,246,.97);border-top:1px solid #e5e5e5}
+    .sr{display:flex;align-items:center;gap:10px;max-width:420px;margin:0 auto 8px}
+    .sr label{font-size:.82rem;color:#374151;white-space:nowrap}
     .slider{flex:1;-webkit-appearance:none;height:6px;border-radius:3px;background:linear-gradient(90deg,#ddd,#7c3aed)}
     .slider::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:#7c3aed;cursor:pointer;box-shadow:0 0 0 3px rgba(124,58,237,.2)}
-    .angle-val{font-family:'SF Mono',monospace;font-size:1rem;font-weight:800;color:#7c3aed;min-width:40px;text-align:right}
-    .info-grid{display:flex;gap:8px;max-width:420px;margin:0 auto}
-    .info-card{flex:1;text-align:center;padding:8px;border-radius:10px;background:#f5f3ff}
-    .info-card .ic-label{font-size:.68rem;color:#6b7280}
-    .info-card .ic-val{font-family:'SF Mono',monospace;font-size:1.1rem;font-weight:800;margin-top:2px}
-    .info-card.red .ic-val{color:#ef4444}
-    .info-card.blue .ic-val{color:#3b82f6}
-    .info-card.purple .ic-val{color:#7c3aed}
-    .celeb{position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.4);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:20px}
-    .celeb.show{display:flex}
-    .card{background:#fff;border-radius:18px;padding:28px 24px;max-width:360px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.12)}
+    .av{font-family:'SF Mono',monospace;font-size:1rem;font-weight:800;color:#7c3aed;min-width:40px;text-align:right}
+    .inf{display:flex;gap:8px;max-width:420px;margin:0 auto}
+    .ic{flex:1;text-align:center;padding:6px 4px;border-radius:8px;background:#f5f3ff}
+    .ic .l{font-size:.62rem;color:#6b7280}
+    .ic .v{font-family:'SF Mono',monospace;font-size:.9rem;font-weight:800;margin-top:1px}
+    .ic.red .v{color:#ef4444}
+    .ic.blue .v{color:#3b82f6}
+    .ic.purple .v{color:#7c3aed}
+    /* Big NEXT button - always visible */
+    .nxt{
+      display:block;margin:0 auto;
+      background:#22c55e;color:#fff;font-weight:700;
+      border:none;padding:10px 24px;border-radius:10px;
+      font-size:.88rem;cursor:pointer;
+      box-shadow:0 4px 16px rgba(34,197,94,.3);
+      transition:all .2s;
+      min-width:160px;
+    }
+    .nxt:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 20px rgba(34,197,94,.4)}
+    .nxt:disabled{background:#d1d5db;box-shadow:none;cursor:not-allowed;color:#9ca3af}
+    /* Celebration */
+    .cel{position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.4);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:20px}
+    .cel.show{display:flex}
+    .card{background:#fff;border-radius:18px;padding:28px 24px;max-width:360px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.12);animation:su .4s ease}
+    @keyframes su{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
     .card .em{font-size:2.8rem;margin-bottom:6px}
     .card h3{font-size:1.1rem;color:#7c3aed;margin-bottom:8px}
     .card p{font-size:.82rem;color:#4b5563;line-height:1.65;margin-bottom:14px}
     .card strong{color:#7c3aed}
     .card button{background:#7c3aed;color:#fff;font-weight:700;border:none;padding:10px 28px;border-radius:10px;cursor:pointer;font-size:.92rem}
-    .dots{position:fixed;top:54px;right:12px;z-index:10;display:flex;gap:5px}
-    .dot{width:6px;height:6px;border-radius:50%;background:#e5e5e5;transition:.3s}
-    .dot.active{background:#7c3aed}
-    .dot.done{background:#22c55e}
-    .phase-trans{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:25;font-size:1.8rem;font-weight:800;color:#7c3aed;pointer-events:none;opacity:0;transition:opacity .5s;background:#fff;padding:10px 20px;border-radius:12px}
-    .phase-trans.show{opacity:1}
   </style>
 </head>
 <body>
 <div class="topbar">
   <div class="t">🪜 Cái Thang</div>
-  <div class="st">Bước <span id="step">1</span>/5</div>
+  <div class="steps">
+    <div class="step active" id="s0"></div>
+    <div class="step" id="s1"></div>
+    <div class="step" id="s2"></div>
+    <div class="step" id="s3"></div>
+    <div class="step" id="s4"></div>
+  </div>
 </div>
-<div class="dots">
-  <div class="dot active"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+<div class="chal">
+  <h3 id="cT"></h3>
+  <p id="cD"></p>
+  <div class="goal" id="cG"></div>
 </div>
-<div class="chal"><h3 id="cht">👆 Kéo thanh góc</h3><p id="chp">Xem thang dựa vào tường — độ cao thay đổi thế nào?</p></div>
-<div class="cw"><canvas id="c" width="500" height="375"></canvas></div>
+<div class="cw"><canvas id="cv" width="500" height="375"></canvas></div>
 <div class="bp">
-  <div class="slider-wrap">
-    <label>📐 Góc thang</label>
+  <div class="sr">
+    <label>📐 Góc</label>
     <input type="range" class="slider" id="sl" min="10" max="80" value="60" step="1">
-    <span class="angle-val" id="av">60°</span>
+    <span class="av" id="av">60°</span>
   </div>
-  <div class="info-grid">
-    <div class="info-card red"><div class="ic-label">Độ cao</div><div class="ic-val" id="iv">4.33m</div></div>
-    <div class="info-card blue"><div class="ic-label">Chân thang</div><div class="ic-val" id="bv">2.50m</div></div>
-    <div class="info-card purple"><div class="ic-label">Chiều dài</div><div class="ic-val">5.00m</div></div>
+  <div class="inf">
+    <div class="ic red"><div class="l">Độ cao</div><div class="v" id="hv">4.33m</div></div>
+    <div class="ic blue"><div class="l">Chân thang</div><div class="v" id="bv">2.50m</div></div>
+    <div class="ic purple"><div class="l">Thang dài</div><div class="v">5.00m</div></div>
   </div>
+  <button class="nxt" id="nxt">Tiếp ▸</button>
 </div>
-<div class="celeb"><div class="card"><div class="em" id="cem">🎉</div><h3 id="cet"></h3><p id="cep"></p><button id="ceb" onclick="dismissCeleb();nextPhase()">Tiếp ▸</button></div></div>
-<div class="phase-trans" id="pt"></div>
-
+<div class="cel"><div class="card"><div class="em" id="cEm"></div><h3 id="cTt"></h3><p id="cTx"></p><button onclick="celClose();adv()">Tiếp ▸</button></div></div>
 <script>
-const canvas=document.getElementById('c'),c=canvas.getContext('2d');
+const cv=document.getElementById('cv'),cx=cv.getContext('2d');
 const W=500,H=375;
-canvas.width=W*devicePixelRatio;canvas.height=H*devicePixelRatio;
-canvas.style.width=W+'px';canvas.style.height=H+'px';
-c.scale(devicePixelRatio,devicePixelRatio);
-
+cv.width=W*devicePixelRatio;cv.height=H*devicePixelRatio;
+cv.style.width=W+'px';cv.style.height=H+'px';
+cx.scale(devicePixelRatio,devicePixelRatio);
 let angle=60,phase=0;
-const L=5;// ladder length = 5m
-// Scale: W pixels = L * 1.2 meters
-const scale=(W*0.8)/(L*1.2);// pixels per meter
-
-const phases=[
-  {t:'👆 Kéo thanh góc',p:'Xem thang dựa vào tường — độ cao thay đổi thế nào?'},
-  {t:'🤔 Góc nào thang LEO CAO nhất?',p:'Thử kéo đến 10°... rồi 80°...'},
-  {t:'📐 Góc 30° đặc biệt!',p:'Kéo về góc 30°. Nhìn độ cao so với chiều dài thang.'},
-  {t:'🤯 AHA!',p:'Góc 30°: độ cao = CHÍNH XÁC một nửa chiều dài!'},
-  {t:'📖 Sin/Cos là gì?',p:'Bí mật của cái thang chính là lượng giác!'},
+const L=5,SC=(W*.75)/(L*1.2);
+const P=[
+  {t:"👆 Kéo góc để thay đổi thang",d:"Nhìn độ cao thang chạm tường thay đổi thế nào?",g:"🎯 Kéo thử vài góc rồi nhấn TIẾP",c:()=>true,
+   cl:null},
+  {t:"🤔 Góc nào thang LEO CAO nhất?",d:"Kéo đến góc lớn — nhìn số ĐỘ CAO đỏ phía dưới.",g:"🎯 Kéo đến ≥ 70° rồi nhấn TIẾP",c:()=>angle>=70,
+   cl:{e:'💡',t:'Càng dốc, càng cao!',p:'Nhưng góc 90° = thang thẳng đứng = dễ đổ!<br><br>Người ta cần tính <strong>góc an toàn</strong>.'}},
+  {t:"📐 Góc 30° — đặc biệt!",d:"Kéo về đúng 30°. Nhìn <strong>độ cao</strong> so với <strong>5m</strong>.",g:"🎯 Kéo đến góc 30° (±2°)",c:()=>Math.abs(angle-30)<=2,
+   cl:{e:'🤯',t:'Độ cao = CHÍNH XÁC một nửa!',p:'Thang 5m, 30° → độ cao = <strong>2.50m = ½</strong>!<br><br>Tỉ lệ ½ <strong>LUÔN đúng</strong> ở 30°!<br><br>→ <strong>sin(30°) = 0.5</strong>'}},
+  {t:"🧐 So sánh sin các góc",d:"Thử: sin(30°)=0.5, sin(45°)=?, sin(60°)=?",g:"🎯 Kéo đến ≥ 55° rồi nhấn TIẾP",c:()=>angle>=55,
+   cl:{e:'📊',t:'Mỗi góc = một tỉ lệ!',p:'sin(30°) = 0.500 → 50% chiều dài<br>sin(45°) = 0.707 → 70.7%<br>sin(60°) = 0.866 → 86.6%<br><br>Đó là <strong>BẢNG LƯỢNG GIÁC</strong> trong SGK!'}},
+  {t:"🎓 Sin/Cos nghĩa là gì?",d:"Nhấn TIẾP để xem!",g:"",c:()=>true,
+   cl:{e:'🎉',t:'Lượng giác = tỉ lệ của cái thang!',p:'<strong>sin(θ)</strong> = Độ cao ÷ Chiều dài<br><strong>cos(θ)</strong> = Khoảng cách ÷ Chiều dài<br><br>🔴 Độ cao = 5 × sin(θ)<br>🔵 Chân thang = 5 × cos(θ)<br><br>Bảng sin/cos = <strong>bản tra cứu tỉ lệ</strong> cho mỗi góc!'}}
 ];
-
-function upUI(){
-  const p=phases[phase];
-  document.getElementById('cht').textContent=p.t;
-  document.getElementById('chp').textContent=p.p;
-  document.getElementById('step').textContent=phase+1;
-  const dots=document.querySelectorAll('.dot');
-  dots.forEach((d,i)=>{d.classList.remove('active','done');if(i<phase)d.classList.add('done');else if(i===phase)d.classList.add('active')});
+function ui(){
+  const p=P[phase];
+  document.getElementById('cT').textContent=p.t;
+  document.getElementById('cD').textContent=p.d;
+  document.getElementById('cG').textContent=p.g;
+  const ss=document.querySelectorAll('.step');
+  ss.forEach((s,i)=>{s.classList.remove('active','done');if(i<phase)s.classList.add('done');else if(i===phase)s.classList.add('active')});
+  const btn=document.getElementById('nxt');
+  const ok=p.c();
+  btn.disabled=!ok;
+  btn.textContent=ok?('Tiếp ▸'):'← Kéo góc đạt yêu cầu';
+  if(phase===4)btn.textContent='🎓 Xem bí mật!';
 }
-
 document.getElementById('sl').addEventListener('input',function(){
   angle=+this.value;
   document.getElementById('av').textContent=angle+'°';
-  checkDiscoveries();
-  draw();
+  ui();draw();
 });
-
-function checkDiscoveries(){
-  const sin=Math.sin(angle*Math.PI/180);
-  const cos=Math.cos(angle*Math.PI/180);
-  if(phase===1&&angle>=75){
-    showCel('💡','Góc càng lớn, thang càng cao!','Nhưng... tại góc 90°, thang sẽ <strong>thẳng đứng</strong> và dễ bị đổ! Người ta cần tính góc an toàn.');
-  }
-  if(phase===1&&angle>=80){
-    showCel('💡','Góc càng lớn, thang càng cao!','Nhưng... tại góc 90°, thang sẽ bị <strong>đổ</strong>! Cần góc an toàn.\n\nBây giờ, em đến <strong>bước 2</strong> — góc 30° có gì đặc biệt?');
-  }
-  if(phase===2&&Math.abs(angle-30)<=3){
-    showCel('🤯','Độ cao = một nửa!','Thang dài <strong>5m</strong>, góc <strong>30°</strong> → độ cao <strong>= 2.5m</strong> (chính xác ½!)\n\nTỉ lệ <strong>½</strong> này LUÔN đúng ở góc 30°, không phụ thuộc thang dài hay ngắn.\n\n<strong>sin(30°) = 0.5 = ½</strong>');
-  }
+function celShow(e,t,p){
+  document.getElementById('cEm').textContent=e;
+  document.getElementById('cTt').textContent=t;
+  document.getElementById('cTx').innerHTML=p.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+  document.getElementById('cel').classList.add('show');
 }
-
-function showCel(e,t,p){
-  document.getElementById('cem').textContent=e;
-  document.getElementById('cet').textContent=t;
-  document.getElementById('cep').innerHTML=p.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
-  document.getElementById('celeb').classList.add('show');
+function celClose(){document.getElementById('cel').classList.remove('show')}
+function adv(){
+  const p=P[phase];
+  if(!p.c())return;
+  if(p.cl)celShow(p.cl.e,p.cl.t,p.cl.p);
+  if(phase<4){phase++;ui();draw();}
 }
-function dismissCeleb(){document.getElementById('celeb').classList.remove('show')}
-
-window.nextPhase=function(){
-  if(phase<4){
-    phase++;upUI();
-    if(phase===4){
-      document.getElementById('ceb').textContent='🎓 Hoàn thành!';
-    }
-    const pt=document.getElementById('pt');
-    pt.textContent=['','Nhìn kỹ hơn...','Thử góc 30°...','🤯 Tỉ lệ đặc biệt!','📖 Bí mật lượng giác'][phase];
-    pt.classList.add('show');
-    setTimeout(()=>pt.classList.remove('show'),1500);
-    draw();
-  }
-  if(phase===4){
-    showCel('🎓','Sin = Độ cao ÷ Chiều dài','<strong>sin(θ)</strong> = độ cao ÷ chiều dài thang = tỉ lệ giữa chiều cao và chiều dài thang.\n\n<em>sin(30°) = 0.5 → độ cao = ½ chiều dài</em>\n<em>sin(45°) = 0.707 → độ cao = 70.7% chiều dài</em>\n<em>sin(60°) = 0.866 → độ cao = 86.6% chiều dài</em>\n\n<strong>Cos(θ)</strong> = khoảng cách chân thang ÷ chiều dài.\n\nĐó là lý do em học <strong>BẢNG GIÁ TRỊ LƯỢNG GIÁC</strong> — sin và cos chính là <strong>tỉ lệ chia</strong> cho mỗi góc!');
-  }
-};
-
+document.getElementById('nxt').addEventListener('click',adv);
 function draw(){
-  c.clearRect(0,0,W,H);
-  const aRad=angle*Math.PI/180;
-  const sin=Math.sin(aRad);
-  const cos=Math.cos(aRad);
-  const h=L*sin;// height
-  const b=L*cos;// base
-
-  const groundY=H*0.82;
-  const wallX=W*0.15;
-
-  // Sky
-  const sky=c.createLinearGradient(0,0,0,groundY);
-  sky.addColorStop(0,'#d4e5ff');sky.addColorStop(1,'#f0f4ff');
-  c.fillStyle=sky;c.fillRect(0,0,W,groundY);
-
-  // Ground
-  c.fillStyle='#e8d9c1';c.fillRect(0,groundY,W,H-groundY);
-  c.strokeStyle='#c4a978';c.lineWidth=2;
-  c.beginPath();c.moveTo(0,groundY);c.lineTo(W,groundY);c.stroke();
-
-  // Wall
-  c.fillStyle='#d9d9d9';c.fillRect(wallX-8,groundY-250,8,250);
-  c.strokeStyle='#aaa';c.lineWidth=1;
-  for(let y=groundY-250;y<groundY;y+=20){
-    c.beginPath();c.moveTo(wallX-8,y);c.lineTo(wallX,y);c.stroke();
-  }
-
-  // Ladder
-  const tipX=wallX;
-  const tipY=groundY-h*scale;
-  const baseX=wallX+b*scale;
-  const baseY=groundY;
-
-  // Ladder rails
-  c.strokeStyle='#d97706';c.lineWidth=4;c.lineCap='round';
-  const offset=3;// spacing between rails
-  const perpX=Math.sin(aRad)*offset;
-  const perpY=Math.cos(aRad)*offset;
-  c.beginPath();c.moveTo(baseX-perpX,baseY-perpY);c.lineTo(tipX-perpX,tipY-perpY);c.stroke();
-  c.beginPath();c.moveTo(baseX+perpX,baseY+perpY);c.lineTo(tipX+perpX,tipY+perpY);c.stroke();
-
-  // Rungs
-  c.strokeStyle='rgba(217,119,6,0.5)';c.lineWidth=2;
-  const rungs=7;
-  for(let i=1;i<=rungs;i++){
-    const f=i/(rungs+1);
-    const rx=baseX+(tipX-baseX)*f;
-    const ry=baseY+(tipY-baseY)*f;
-    c.beginPath();
-    c.moveTo(rx-perpX,ry-perpY);
-    c.lineTo(rx+perpX,ry+perpY);
-    c.stroke();
-  }
-
-  // Height indicator (red)
-  c.setLineDash([4,3]);
-  c.strokeStyle='#ef4444';c.lineWidth=2;
-  c.beginPath();c.moveTo(wallX+25,groundY);c.lineTo(wallX+25,tipY+10);c.stroke();
-  c.setLineDash([]);
-
-  // Height arrow
-  c.strokeStyle='#ef4444';c.lineWidth=2;
-  c.beginPath();c.moveTo(wallX+25,groundY);c.lineTo(wallX+25,tipY+10);c.stroke();
-  c.fillStyle='#ef4444';
-  c.beginPath();c.moveTo(wallX+25,tipY+5);c.lineTo(wallX+20,tipY+15);c.lineTo(wallX+30,tipY+15);c.closePath();c.fill();
-
-  // Base indicator (blue)
-  c.setLineDash([4,3]);
-  c.strokeStyle='#3b82f6';c.lineWidth=2;
-  c.beginPath();c.moveTo(wallX,groundY+12);c.lineTo(baseX,groundY+12);c.stroke();
-  c.setLineDash([]);
-
-  // Base arrow
-  c.fillStyle='#3b82f6';
-  c.beginPath();c.moveTo(baseX-5,groundY+12);c.lineTo(baseX,groundY+7);c.lineTo(baseX,groundY+17);c.closePath();c.fill();
-
-  // Angle arc
-  c.strokeStyle='#7c3aed';c.lineWidth=2;
-  c.beginPath();c.arc(wallX,groundY,30,0,-aRad,true);
-  c.stroke();
-
-  // Angle label
-  c.fillStyle='#7c3aed';c.font='bold 14px sans-serif';c.textAlign='left';
-  c.fillText(angle+'°',wallX+35,groundY-10);
-
-  // Height text
-  c.fillStyle='#ef4444';c.font='bold 12px sans-serif';c.textAlign='left';
-  c.fillText('← '+h.toFixed(2)+'m',wallX+30,(groundY+tipY)/2);
-
-  // Base text
-  c.fillStyle='#3b82f6';c.font='bold 12px sans-serif';c.textAlign='center';
-  c.fillText(b.toFixed(2)+'m →',(wallX+baseX)/2,groundY+28);
-
-  // Person at base of ladder
-  const px=baseX-15;
-  c.strokeStyle='#6b7280';c.lineWidth=2;c.lineCap='round';
-  c.beginPath();c.arc(px,groundY-25,7,0,Math.PI*2);c.stroke();
-  c.beginPath();c.moveTo(px,groundY-18);c.lineTo(px,groundY-5);c.stroke();
-  c.beginPath();c.moveTo(px,groundY-5);c.lineTo(px-6,groundY);c.stroke();
-  c.beginPath();c.moveTo(px,groundY-5);c.lineTo(px+6,groundY);c.stroke();
-  // Arms (holding ladder)
-  c.beginPath();c.moveTo(px-3,groundY-14);c.lineTo(baseX-8,groundY-12);c.stroke();
-
-  // Update info cards
-  document.getElementById('iv').textContent=h.toFixed(2)+'m';
+  cx.clearRect(0,0,W,H);
+  const aR=angle*Math.PI/180,h=L*Math.sin(aR),b=L*Math.cos(aR);
+  const gY=H*.82,wX=W*.12;
+  const sk=cx.createLinearGradient(0,0,0,gY);sk.addColorStop(0,'#dce8f8');sk.addColorStop(1,'#f0f4ff');
+  cx.fillStyle=sk;cx.fillRect(0,0,W,gY);
+  cx.fillStyle='#e8d9c1';cx.fillRect(0,gY,W,H-gY);
+  cx.strokeStyle='#c4a978';cx.lineWidth=2;cx.beginPath();cx.moveTo(0,gY);cx.lineTo(W,gY);cx.stroke();
+  cx.fillStyle='#c9c9d4';cx.fillRect(wX-10,gY-260,10,260);
+  cx.strokeStyle='#aaa';cx.lineWidth=1;
+  for(let y=gY-260;y<gY;y+=20){cx.beginPath();cx.moveTo(wX-10,y);cx.lineTo(wX,y);cx.stroke()}
+  const tX=wX,tY=gY-h*SC,baX=wX+b*SC;
+  cx.strokeStyle='#d97706';cx.lineWidth=4;cx.lineCap='round';
+  const of=3,px=Math.sin(aR)*of,py=Math.cos(aR)*of;
+  cx.beginPath();cx.moveTo(baX-px,gY-py);cx.lineTo(tX-px,tY-py);cx.stroke();
+  cx.beginPath();cx.moveTo(baX+px,gY+py);cx.lineTo(tX+px,tY+py);cx.stroke();
+  cx.strokeStyle='rgba(217,119,6,.5)';cx.lineWidth=2;
+  for(let i=1;i<=7;i++){const f=i/8,rx=baX+(tX-baX)*f,ry=gY+(tY-gY)*f;cx.beginPath();cx.moveTo(rx-px,ry-py);cx.lineTo(rx+px,ry+py);cx.stroke()}
+  cx.setLineDash([4,3]);cx.strokeStyle='#ef4444';cx.lineWidth=2;cx.beginPath();cx.moveTo(wX+20,gY);cx.lineTo(wX+20,tY+8);cx.stroke();cx.setLineDash([]);
+  cx.fillStyle='#ef4444';cx.beginPath();cx.moveTo(wX+20,tY+3);cx.lineTo(wX+15,tY+13);cx.lineTo(wX+25,tY+13);cx.closePath();cx.fill();
+  cx.setLineDash([4,3]);cx.strokeStyle='#3b82f6';cx.lineWidth=2;cx.beginPath();cx.moveTo(wX,gY+12);cx.lineTo(baX,gY+12);cx.stroke();cx.setLineDash([]);
+  cx.strokeStyle='#7c3aed';cx.lineWidth=2;cx.beginPath();cx.arc(wX,gY,30,0,-aR,true);cx.stroke();
+  cx.fillStyle='#7c3aed';cx.font='bold 14px sans-serif';cx.textAlign='left';cx.fillText(angle+'°',wX+35,gY-10);
+  cx.fillStyle='#ef4444';cx.font='bold 12px sans-serif';cx.fillText(h.toFixed(2)+'m',wX+25,(gY+tY)/2);
+  cx.fillStyle='#3b82f6';cx.textAlign='center';cx.fillText(b.toFixed(2)+'m',(wX+baX)/2,gY+28);
+  //Person
+  const ppx=baX-18;cx.strokeStyle='#6b7280';cx.lineWidth=2;cx.lineCap='round';
+  cx.beginPath();cx.arc(ppx,gY-24,7,0,Math.PI*2);cx.stroke();
+  cx.beginPath();cx.moveTo(ppx,gY-17);cx.lineTo(ppx,gY-5);cx.stroke();
+  cx.beginPath();cx.moveTo(ppx,gY-5);cx.lineTo(ppx-6,gY);cx.stroke();
+  cx.beginPath();cx.moveTo(ppx,gY-5);cx.lineTo(ppx+6,gY);cx.stroke();
+  cx.beginPath();cx.moveTo(ppx-3,gY-13);cx.lineTo(baX-8,gY-10);cx.stroke();
+  document.getElementById('hv').textContent=h.toFixed(2)+'m';
   document.getElementById('bv').textContent=b.toFixed(2)+'m';
 }
-
-// Keyboard support
-document.addEventListener('keydown',function(e){
-  if(e.key==='ArrowRight'){
-    angle=Math.min(80,angle+1);
-    document.getElementById('sl').value=angle;
-    document.getElementById('av').textContent=angle+'°';
-    checkDiscoveries();draw();e.preventDefault();
-  }else if(e.key==='ArrowLeft'){
-    angle=Math.max(10,angle-1);
-    document.getElementById('sl').value=angle;
-    document.getElementById('av').textContent=angle+'°';
-    checkDiscoveries();draw();e.preventDefault();
-  }
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'){angle=Math.min(80,angle+1);document.getElementById('sl').value=angle;document.getElementById('av').textContent=angle+'°';ui();draw();e.preventDefault()}
+  if(e.key==='ArrowLeft'){angle=Math.max(10,angle-1);document.getElementById('sl').value=angle;document.getElementById('av').textContent=angle+'°';ui();draw();e.preventDefault()}
 });
-
-// INIT
-upUI();
-draw();
+ui();draw();
 </script>
 </body>
 </html>
