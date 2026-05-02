@@ -2,586 +2,275 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Archery Math — Intuition Engine</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
-  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cái Thang — Lượng Giác Đơn Giản</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #0a0a1a;
-      color: #e4e4e7;
-      min-height: 100dvh;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      -webkit-user-select: none;
-      user-select: none;
-    }
-
-    /* === TOP BAR === */
-    .topbar {
-      position: fixed; top: 0; left: 0; right: 0; z-index: 10;
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 10px 16px;
-      background: rgba(10,10,26,0.9);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid #1a1a2e;
-    }
-    .topbar .title { font-size: 0.95rem; font-weight: 700; color: #a78bfa; }
-    .topbar .score { font-size: 0.8rem; color: #71717a; }
-    .topbar .score span { color: #34d399; font-weight: 700; }
-
-    /* === GAME CANVAS === */
-    .game-wrap {
-      flex: 1; display: flex; align-items: center; justify-content: center;
-      padding-top: 50px;
-    }
-    canvas#game {
-      width: 100%; max-width: 700px;
-      aspect-ratio: 16/9;
-      touch-action: none;
-      cursor: crosshair;
-    }
-
-    /* === CONTROLS === */
-    .controls {
-      position: fixed; bottom: 0; left: 0; right: 0; z-index: 10;
-      padding: 12px 16px;
-      background: rgba(10,10,26,0.9);
-      backdrop-filter: blur(12px);
-      border-top: 1px solid #1a1a2e;
-    }
-    .ctrl-row {
-      display: flex; align-items: center; gap: 12px;
-      max-width: 500px; margin: 0 auto;
-    }
-    .ctrl-label {
-      font-size: 0.85rem; color: #a1a1aa;
-      white-space: nowrap; min-width: 50px;
-    }
-    .ctrl-slider {
-      flex: 1; -webkit-appearance: none; appearance: none;
-      height: 6px; border-radius: 3px;
-      background: linear-gradient(90deg, #27272a, #a78bfa);
-      outline: none;
-    }
-    .ctrl-slider::-webkit-slider-thumb {
-      -webkit-appearance: none; appearance: none;
-      width: 20px; height: 20px; border-radius: 50%;
-      background: #a78bfa; cursor: pointer;
-      box-shadow: 0 0 8px rgba(167,139,250,0.5);
-    }
-    .ctrl-val {
-      font-family: 'SF Mono', 'Fira Code', monospace;
-      font-size: 0.9rem; font-weight: 700;
-      color: #fbbf24; min-width: 40px; text-align: right;
-    }
-    .shoot-btn {
-      display: block; margin: 10px auto 0;
-      background: #f87171; color: #fff;
-      font-size: 1rem; font-weight: 800;
-      border: none; padding: 10px 36px;
-      border-radius: 10px; cursor: pointer;
-      transition: all 0.2s;
-    }
-    .shoot-btn:hover { background: #fb923c; transform: scale(1.05); }
-    .shoot-btn:disabled { background: #3f3f46; cursor: not-allowed; transform: none; }
-
-    /* === CHALLENGE BANNER === */
-    .challenge {
-      position: fixed; top: 48px; left: 50%; transform: translateX(-50%); z-index: 10;
-      max-width: 380px; width: 90%;
-      padding: 10px 16px;
-      background: rgba(24,24,40,0.95);
-      border: 1px solid #27272a;
-      border-radius: 12px;
-      text-align: center;
-    }
-    .challenge h3 { font-size: 0.9rem; color: #fbbf24; margin-bottom: 4px; }
-    .challenge p { font-size: 0.78rem; color: #a1a1aa; line-height: 1.4; }
-
-    /* === MATH PANEL (slide up) === */
-    .math-panel {
-      position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%);
-      max-width: 400px; width: 90%;
-      padding: 16px 20px;
-      background: rgba(18,18,36,0.96);
-      border: 1px solid #3f3f46;
-      border-radius: 16px;
-      display: none; z-index: 20;
-    }
-    .math-panel.show { display: block; animation: slideUp 0.4s ease; }
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateX(-50%) translateY(20px); }
-      to { opacity: 1; transform: translateX(-50%) translateY(0); }
-    }
-    .math-panel h4 { color: #a78bfa; font-size: 0.9rem; margin-bottom: 8px; }
-    .math-panel p { font-size: 0.82rem; color: #d4d4d8; line-height: 1.6; margin-bottom: 6px; }
-
-    /* === CELEBRATION === */
-    .celeb-overlay {
-      position: fixed; inset: 0; z-index: 30;
-      background: rgba(10,10,26,0.85);
-      backdrop-filter: blur(6px);
-      display: none; align-items: center; justify-content: center;
-    }
-    .celeb-overlay.show { display: flex; }
-    .celeb-card {
-      background: #18181b;
-      border: 1px solid #3f3f46;
-      border-radius: 20px;
-      padding: 28px 24px;
-      max-width: 360px;
-      text-align: center;
-    }
-    .celeb-card .emoji { font-size: 3rem; margin-bottom: 8px; }
-    .celeb-card h3 { color: #34d399; font-size: 1.2rem; margin-bottom: 8px; }
-    .celeb-card p { font-size: 0.85rem; color: #a1a1aa; line-height: 1.6; margin-bottom: 14px; }
-    .celeb-card button {
-      background: #a78bfa; color: #0a0a1a;
-      font-weight: 700; border: none;
-      padding: 10px 28px; border-radius: 10px;
-      cursor: pointer; font-size: 0.95rem;
-    }
-
-    /* === PHASE DOTS === */
-    .dots {
-      position: fixed; top: 56px; right: 12px; z-index: 10;
-      display: flex; flex-direction: column; gap: 6px;
-    }
-    .dot { width: 6px; height: 6px; border-radius: 50%; background: #27272a; transition: all 0.3s; }
-    .dot.active { background: #a78bfa; }
-    .dot.done { background: #34d399; }
-
-    /* Phase transitions */
-    .phase-label {
-      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      z-index: 25;
-      font-size: 1.5rem; font-weight: 800;
-      color: #a78bfa;
-      text-align: center;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.5s;
-    }
-    .phase-label.show { opacity: 1; }
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f6;color:#1a1a1a;min-height:100dvh;display:flex;flex-direction:column;overflow:hidden;-webkit-user-select:none;user-select:none}
+    .topbar{position:fixed;top:0;left:0;right:0;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(250,249,246,.95);border-bottom:1px solid #e5e5e5}
+    .topbar .t{font-size:.95rem;font-weight:700;color:#7c3aed}
+    .topbar .st{text-align:right;font-size:.72rem;color:#6b7280}
+    .chal{position:fixed;top:50px;left:50%;transform:translateX(-50%);z-index:10;max-width:380px;width:90%;padding:10px 16px;background:#fff;border:1px solid #e5e7eb;border-radius:14px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+    .chal h3{font-size:.88rem;color:#7c3aed;margin-bottom:2px}
+    .chal p{font-size:.73rem;color:#6b7280;line-height:1.4}
+    .cw{flex:1;display:flex;align-items:center;justify-content:center;padding:80px 8px 120px}
+    canvas{width:100%;max-width:500px;aspect-ratio:4/3;touch-action:none;border-radius:12px;overflow:hidden}
+    .bp{position:fixed;bottom:0;left:0;right:0;z-index:10;padding:12px 16px;background:rgba(250,249,246,.97);backdrop-filter:blur(8px);border-top:1px solid #e5e5e5}
+    .slider-wrap{display:flex;align-items:center;gap:12px;max-width:420px;margin:0 auto 8px}
+    .slider-wrap label{font-size:.82rem;color:#374151;white-space:nowrap;min-width:70px}
+    .slider{flex:1;-webkit-appearance:none;height:6px;border-radius:3px;background:linear-gradient(90deg,#ddd,#7c3aed)}
+    .slider::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:#7c3aed;cursor:pointer;box-shadow:0 0 0 3px rgba(124,58,237,.2)}
+    .angle-val{font-family:'SF Mono',monospace;font-size:1rem;font-weight:800;color:#7c3aed;min-width:40px;text-align:right}
+    .info-grid{display:flex;gap:8px;max-width:420px;margin:0 auto}
+    .info-card{flex:1;text-align:center;padding:8px;border-radius:10px;background:#f5f3ff}
+    .info-card .ic-label{font-size:.68rem;color:#6b7280}
+    .info-card .ic-val{font-family:'SF Mono',monospace;font-size:1.1rem;font-weight:800;margin-top:2px}
+    .info-card.red .ic-val{color:#ef4444}
+    .info-card.blue .ic-val{color:#3b82f6}
+    .info-card.purple .ic-val{color:#7c3aed}
+    .celeb{position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.4);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:20px}
+    .celeb.show{display:flex}
+    .card{background:#fff;border-radius:18px;padding:28px 24px;max-width:360px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.12)}
+    .card .em{font-size:2.8rem;margin-bottom:6px}
+    .card h3{font-size:1.1rem;color:#7c3aed;margin-bottom:8px}
+    .card p{font-size:.82rem;color:#4b5563;line-height:1.65;margin-bottom:14px}
+    .card strong{color:#7c3aed}
+    .card button{background:#7c3aed;color:#fff;font-weight:700;border:none;padding:10px 28px;border-radius:10px;cursor:pointer;font-size:.92rem}
+    .dots{position:fixed;top:54px;right:12px;z-index:10;display:flex;gap:5px}
+    .dot{width:6px;height:6px;border-radius:50%;background:#e5e5e5;transition:.3s}
+    .dot.active{background:#7c3aed}
+    .dot.done{background:#22c55e}
+    .phase-trans{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:25;font-size:1.8rem;font-weight:800;color:#7c3aed;pointer-events:none;opacity:0;transition:opacity .5s;background:#fff;padding:10px 20px;border-radius:12px}
+    .phase-trans.show{opacity:1}
   </style>
 </head>
 <body>
-
 <div class="topbar">
-  <div class="title">🏹 Archery Math</div>
-  <div class="score">Trúng: <span id="hit-count">0</span>/<span id="total-shots">0</span></div>
+  <div class="t">🪜 Cái Thang</div>
+  <div class="st">Bước <span id="step">1</span>/5</div>
 </div>
-
 <div class="dots">
-  <div class="dot active" id="d0"></div>
-  <div class="dot" id="d1"></div>
-  <div class="dot" id="d2"></div>
-  <div class="dot" id="d3"></div>
+  <div class="dot active"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
 </div>
-
-<div class="challenge" id="challenge">
-  <h3 id="ch-title">🎯 Bắn trúng mục tiêu!</h3>
-  <p id="ch-desc">Kéo thanh góc rồi nhấn BẮN. Trúng hồng tâm = 10đ</p>
-</div>
-
-<div class="game-wrap">
-  <canvas id="game"></canvas>
-</div>
-
-<div class="controls">
-  <div class="ctrl-row">
-    <span class="ctrl-label">📐 Góc</span>
-    <input type="range" class="ctrl-slider" id="angle-slider" min="5" max="85" value="45" step="1">
-    <span class="ctrl-val" id="angle-val">45°</span>
+<div class="chal"><h3 id="cht">👆 Kéo thanh góc</h3><p id="chp">Xem thang dựa vào tường — độ cao thay đổi thế nào?</p></div>
+<div class="cw"><canvas id="c" width="500" height="375"></canvas></div>
+<div class="bp">
+  <div class="slider-wrap">
+    <label>📐 Góc thang</label>
+    <input type="range" class="slider" id="sl" min="10" max="80" value="60" step="1">
+    <span class="angle-val" id="av">60°</span>
   </div>
-  <div class="ctrl-row">
-    <span class="ctrl-label">💨 Lực</span>
-    <input type="range" class="ctrl-slider" id="power-slider" min="10" max="30" value="20" step="1">
-    <span class="ctrl-val" id="power-val">20</span>
-  </div>
-  <button class="shoot-btn" id="shoot-btn" onclick="shoot()">🏹 BẮN!</button>
-</div>
-
-<div class="math-panel" id="math-panel">
-  <h4 id="math-title"></h4>
-  <p id="math-body"></p>
-</div>
-
-<div class="celeb-overlay" id="celeb">
-  <div class="celeb-card">
-    <div class="emoji" id="celeb-emoji">🎉</div>
-    <h3 id="celeb-title"></h3>
-    <p id="celeb-text"></p>
-    <button onclick="dismissCeleb(); nextPhase();" id="celeb-btn">Tiếp tục ▸</button>
+  <div class="info-grid">
+    <div class="info-card red"><div class="ic-label">Độ cao</div><div class="ic-val" id="iv">4.33m</div></div>
+    <div class="info-card blue"><div class="ic-label">Chân thang</div><div class="ic-val" id="bv">2.50m</div></div>
+    <div class="info-card purple"><div class="ic-label">Chiều dài</div><div class="ic-val">5.00m</div></div>
   </div>
 </div>
-
-<div class="phase-label" id="phase-label"></div>
+<div class="celeb"><div class="card"><div class="em" id="cem">🎉</div><h3 id="cet"></h3><p id="cep"></p><button id="ceb" onclick="dismissCeleb();nextPhase()">Tiếp ▸</button></div></div>
+<div class="phase-trans" id="pt"></div>
 
 <script>
-// === GAME ENGINE ===
-const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d');
+const canvas=document.getElementById('c'),c=canvas.getContext('2d');
+const W=500,H=375;
+canvas.width=W*devicePixelRatio;canvas.height=H*devicePixelRatio;
+canvas.style.width=W+'px';canvas.style.height=H+'px';
+c.scale(devicePixelRatio,devicePixelRatio);
 
-// Responsive canvas
-function resizeCanvas() {
-  const rect = canvas.parentElement.getBoundingClientRect();
-  canvas.width = Math.min(700, rect.width - 32);
-  canvas.height = canvas.width * 9/16;
-}
-resizeCanvas();
-window.addEventListener('resize', resizeCanvas);
+let angle=60,phase=0;
+const L=5;// ladder length = 5m
+// Scale: W pixels = L * 1.2 meters
+const scale=(W*0.8)/(L*1.2);// pixels per meter
 
-// === GAME STATE ===
-let angle = 45;    // degrees
-let power = 20;
-let flying = false;
-let arrow = { x: 0, y: 0, vx: 0, vy: 0, trail: [] };
-let groundY;       // visual ground on canvas
-let targetX, targetY, targetR;
-let hitCount = 0, totalShots = 0;
-let phase = 0;
-let phase1Target = { x: 0, y: 0, r: 0 }; // target for phase 1
-let attempts = 0;  // shots in current phase
-let bestDist = Infinity;
-
-// Physics
-const GRAVITY = 9.8;
-const SCALE = 10; // pixels per meter
-
-// === Setup target ===
-function setupTarget() {
-  groundY = canvas.height * 0.88;
-  // Phase-based targets
-  if (phase === 0 || phase === 1) {
-    targetX = canvas.width * 0.75;
-    targetY = groundY;
-    targetR = 30;
-  }
-  if (phase === 2) {
-    targetX = canvas.width * 0.8;
-    targetY = groundY - 60;
-    targetR = 20;
-  }
-  if (phase === 3) {
-    targetX = canvas.width * 0.85;
-    targetY = groundY - 100;
-    targetR = 15;
-  }
-}
-
-// === DRAW ===
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // Sky gradient
-  const sky = ctx.createLinearGradient(0, 0, 0, groundY);
-  sky.addColorStop(0, '#0c0c28');
-  sky.addColorStop(1, '#1a1a3a');
-  ctx.fillStyle = sky;
-  ctx.fillRect(0, 0, canvas.width, groundY);
-
-  // Ground
-  ctx.fillStyle = '#1a2e1a';
-  ctx.fillRect(0, groundY, canvas.width, canvas.height - groundY);
-  ctx.fillStyle = '#2a4a2a';
-  ctx.fillRect(0, groundY, canvas.width, 3);
-
-  // Stars
-  for (let i = 0; i < 30; i++) {
-    ctx.fillStyle = `rgba(255,255,255,${0.3 + Math.random()*0.4})`;
-    ctx.fillRect((i * 73 + 17) % canvas.width, (i * 41 + 11) % (groundY * 0.5), 1.5, 1.5);
-  }
-
-  // Target
-  drawTarget(targetX, targetY, targetR);
-
-  // Archer (bow)
-  const bowX = 40, bowY = groundY - 40;
-  drawArcher(bowX, bowY, angle);
-
-  // Trajectory preview (dotted)
-  if (!flying) {
-    drawTrajectoryPreview(bowX + 30, bowY, angle, power);
-  }
-
-  // Arrow in flight
-  if (flying) {
-    drawArrowProjectile(arrow.x, arrow.y);
-    // Trail
-    if (arrow.trail.length > 2) {
-      ctx.beginPath();
-      ctx.strokeStyle = 'rgba(248,113,113,0.3)';
-      ctx.lineWidth = 1;
-      for (let i = 0; i < arrow.trail.length; i++) {
-        const p = arrow.trail[i];
-        if (i === 0) ctx.moveTo(p.x, p.y);
-        else ctx.lineTo(p.x, p.y);
-      }
-      ctx.stroke();
-    }
-  }
-
-  // Distance text
-  if (!flying) {
-    ctx.fillStyle = '#a1a1aa';
-    ctx.font = '11px sans-serif';
-    const dist = ((targetX - 70) / SCALE).toFixed(0);
-    ctx.textAlign = 'center';
-    ctx.fillText(`${dist}m`, (70 + targetX) / 2, groundY + 18);
-  }
-}
-
-function drawTarget(x, y, r) {
-  // Stand
-  ctx.fillStyle = '#3f2a14';
-  ctx.fillRect(x - 3, y, 6, (canvas.height - y));
-  // Bullseye rings
-  const colors = ['#f87171', '#fb923c', '#fbbf24', '#34d399', '#60a5fa'];
-  for (let i = 4; i >= 0; i--) {
-    ctx.beginPath();
-    ctx.arc(x, y, r * (4 - i) / 4, Math.PI, 0, false); // half circle
-    ctx.fill();
-  }
-  // Flat bottom
-  ctx.fillStyle = '#f87171';
-  ctx.fillRect(x - r, y, r * 2, 4);
-  for (let i = 4; i >= 1; i--) {
-    ctx.fillStyle = colors[4-i+1] || '#f87171';
-    ctx.fillRect(x - r*(i)/4, y, r * 2 * (i)/4, 4);
-  }
-}
-
-function drawArcher(x, y, ang) {
-  // Stick figure archer
-  ctx.strokeStyle = '#a78bfa';
-  ctx.lineWidth = 2;
-  ctx.lineCap = 'round';
-
-  // Head
-  ctx.beginPath(); ctx.arc(x, y - 25, 6, 0, Math.PI*2); ctx.stroke();
-  // Body
-  ctx.beginPath(); ctx.moveTo(x, y - 19); ctx.lineTo(x, y); ctx.stroke();
-  // Legs
-  ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x-8, y+20); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x+8, y+20); ctx.stroke();
-  // Bow arm
-  const rad = -ang * Math.PI / 180;
-  const armLen = 15;
-  ctx.beginPath();
-  ctx.moveTo(x, y-15);
-  ctx.lineTo(x + armLen * Math.cos(rad), y - 15 + armLen * Math.sin(rad));
-  ctx.stroke();
-  // Bow arc
-  ctx.beginPath();
-  ctx.strokeStyle = '#fbbf24';
-  ctx.lineWidth = 2;
-  const tip1x = x + 10 * Math.cos(rad + 0.5), tip1y = y-15 + 10 * Math.sin(rad + 0.5);
-  const tip2x = x + 10 * Math.cos(rad - 0.5), tip2y = y-15 + 10 * Math.sin(rad - 0.5);
-  ctx.moveTo(tip1x, tip1y);
-  ctx.quadraticCurveTo(x + 15 * Math.cos(rad), y - 15 + 15 * Math.sin(rad), tip2x, tip2y);
-  ctx.stroke();
-}
-
-function drawTrajectoryPreview(x, y, ang, pw) {
-  const rad = -ang * Math.PI / 180;
-  const vx = pw * Math.cos(rad) * SCALE;
-  const vy = pw * Math.sin(rad) * SCALE;
-  let px = x, py = y, t = 0;
-  ctx.setLineDash([3, 4]);
-  ctx.strokeStyle = 'rgba(167,139,250,0.25)';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(x, y);
-  for (let i = 0; i < 60; i++) {
-    t += 0.03;
-    px = x + vx * t;
-    py = y + vy * t * SCALE + 0.5 * GRAVITY * t * t * SCALE;
-    if (py > groundY || px > canvas.width) break;
-    ctx.lineTo(px, py);
-  }
-  ctx.stroke();
-  ctx.setLineDash([]);
-}
-
-function drawArrowProjectile(x, y) {
-  ctx.fillStyle = '#f87171';
-  ctx.beginPath();
-  ctx.arc(x, y, 4, 0, Math.PI * 2);
-  ctx.fill();
-  // Glow
-  ctx.fillStyle = 'rgba(248,113,113,0.3)';
-  ctx.beginPath();
-  ctx.arc(x, y, 8, 0, Math.PI * 2);
-  ctx.fill();
-}
-
-// === PHYSICS ===
-function shoot() {
-  if (flying) return;
-  flying = true;
-  totalShots++;
-  attempts++;
-  document.getElementById('total-shots').textContent = totalShots;
-  document.getElementById('shoot-btn').disabled = true;
-
-  const bowX = 70, bowY = groundY - 40;
-  const rad = -angle * Math.PI / 180;
-
-  arrow.x = bowX;
-  arrow.y = bowY;
-  arrow.vx = power * Math.cos(rad) * SCALE;
-  arrow.vy = power * Math.sin(rad); // velocity in m/s, not scaled
-  arrow.trail = [{ x: bowX, y: bowY }];
-
-  animateArrow(bowX, bowY);
-}
-
-function animateArrow() {
-  let t = 0;
-  const bowX = 70, bowY = groundY - 40;
-
-  function step() {
-    t += 0.04;
-    arrow.x = bowX + arrow.vx * t;
-    arrow.y = bowY + (arrow.vy * t + 0.5 * GRAVITY * t * t) * SCALE;
-
-    if (arrow.trail.length < 40)
-      arrow.trail.push({ x: arrow.x, y: arrow.y });
-
-    if (arrow.y >= groundY || arrow.x > canvas.width + 20) {
-      // Hit detection
-      const dist = Math.hypot(arrow.x - targetX, arrow.y - targetY);
-      checkHit(dist);
-      flying = false;
-      document.getElementById('shoot-btn').disabled = false;
-      draw();
-      return;
-    }
-
-    draw();
-    requestAnimationFrame(step);
-  }
-  step();
-}
-
-function checkHit(dist) {
-  if (dist < targetR) {
-    hitCount++;
-    document.getElementById('hit-count').textContent = hitCount;
-    // Success!
-    if (phase === 1) {
-      showCeleb('🎯', 'Trúng rồi!', 'Bây giờ nghĩ thử: góc nào để viên đạn bay XA NHẤT? Thử bắn với góc 30°, 45°, 60° xem!');
-    } else if (phase === 2) {
-      // Show math!
-      showMathReveal();
-    } else {
-      showCeleb('🎉', 'Trúng hồng tâm!', 'Bạn đang dùng lượng giác đó — không cần biết công thức, nhưng đang dùng!');
-    }
-  } else {
-    // Miss feedback
-    if (dist > targetR * 3) {
-      showPhaseLabel('Bắn trật! 🔁 Thử lại');
-    }
-    setTimeout(() => draw(), 600);
-  }
-}
-
-// === UI HELPERS ===
-function showPhaseLabel(text) {
-  const el = document.getElementById('phase-label');
-  el.textContent = text;
-  el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 1200);
-}
-
-function showCeleb(emoji, title, text) {
-  document.getElementById('celeb-emoji').textContent = emoji;
-  document.getElementById('celeb-title').textContent = title;
-  document.getElementById('celeb-text').textContent = text;
-  document.getElementById('celeb').classList.add('show');
-}
-window.dismissCeleb = function() {
-  document.getElementById('celeb').classList.remove('show');
-};
-
-function showMathReveal() {
-  const panel = document.getElementById('math-panel');
-  document.getElementById('math-title').textContent = '🧠 Lượng giác nằm trong game này!';
-  document.getElementById('math-body').innerHTML = `
-    Khi em bắn mũi tên góc <strong>${angle}°</strong> với lực <strong>${power}</strong>:<br><br>
-    • <span style="color:#f87171">sin(${angle}°) = ${(Math.sin(-angle * Math.PI / 180)).toFixed(2)}</span> → thành phần bay <strong>lên</strong><br>
-    • <span style="color:#60a5fa">cos(${angle}°) = ${(Math.cos(angle * Math.PI / 180)).toFixed(2)}</span> → thành phần bay <strong>ngang</strong><br><br>
-    <em><strong>sin = bay cao. Cos = bay xa.</strong></em><br>
-    Game này tính đường bay của mũi tên bằng sin và cos — chính là tọa độ trên vòng tròn đơn vị!
-  `;
-  panel.classList.add('show');
-  // Re-render canvas after short delay
-  setTimeout(() => { flying = false; document.getElementById('shoot-btn').disabled = false; draw(); }, 400);
-}
-
-// === Sliders ===
-const angleSlider = document.getElementById('angle-slider');
-const powerSlider = document.getElementById('power-slider');
-angleSlider.addEventListener('input', e => {
-  angle = parseInt(e.target.value);
-  document.getElementById('angle-val').textContent = angle + '°';
-  if (!flying) draw();
-});
-powerSlider.addEventListener('input', e => {
-  power = parseInt(e.target.value);
-  document.getElementById('power-val').textContent = power;
-  if (!flying) draw();
-});
-
-// === PHASES ===
-const phaseData = [
-  { title: '🎯 Làm quen!', desc: 'Nhấn BẮN. Xem mũi tên bay. Kéo thử các góc.' },
-  { title: '🏆 Thử thách', desc: 'Bắn trúng mục tiêu! Thử các góc khác nhau: 30°, 45°, 60°' },
-  { title: '🧐 Câu hỏi', desc: 'Góc nào đi XA NHẤT? Thử: 30° vs 45° vs 60°' },
-  { title: '💡 Khám phá', desc: 'Bắn vào mục tiêu trên cao. Góc nào bây giờ?' },
+const phases=[
+  {t:'👆 Kéo thanh góc',p:'Xem thang dựa vào tường — độ cao thay đổi thế nào?'},
+  {t:'🤔 Góc nào thang LEO CAO nhất?',p:'Thử kéo đến 10°... rồi 80°...'},
+  {t:'📐 Góc 30° đặc biệt!',p:'Kéo về góc 30°. Nhìn độ cao so với chiều dài thang.'},
+  {t:'🤯 AHA!',p:'Góc 30°: độ cao = CHÍNH XÁC một nửa chiều dài!'},
+  {t:'📖 Sin/Cos là gì?',p:'Bí mật của cái thang chính là lượng giác!'},
 ];
 
-function updatePhaseUI() {
-  setupTarget();
-  const p = phaseData[phase];
-  document.getElementById('ch-title').textContent = p.title;
-  document.getElementById('ch-desc').textContent = p.desc;
-  for (let i = 0; i < 4; i++) {
-    const d = document.getElementById('d' + i);
-    d.classList.remove('active', 'done');
-    if (i < phase) d.classList.add('done');
-    else if (i === phase) d.classList.add('active');
+function upUI(){
+  const p=phases[phase];
+  document.getElementById('cht').textContent=p.t;
+  document.getElementById('chp').textContent=p.p;
+  document.getElementById('step').textContent=phase+1;
+  const dots=document.querySelectorAll('.dot');
+  dots.forEach((d,i)=>{d.classList.remove('active','done');if(i<phase)d.classList.add('done');else if(i===phase)d.classList.add('active')});
+}
+
+document.getElementById('sl').addEventListener('input',function(){
+  angle=+this.value;
+  document.getElementById('av').textContent=angle+'°';
+  checkDiscoveries();
+  draw();
+});
+
+function checkDiscoveries(){
+  const sin=Math.sin(angle*Math.PI/180);
+  const cos=Math.cos(angle*Math.PI/180);
+  if(phase===1&&angle>=75){
+    showCel('💡','Góc càng lớn, thang càng cao!','Nhưng... tại góc 90°, thang sẽ <strong>thẳng đứng</strong> và dễ bị đổ! Người ta cần tính góc an toàn.');
+  }
+  if(phase===1&&angle>=80){
+    showCel('💡','Góc càng lớn, thang càng cao!','Nhưng... tại góc 90°, thang sẽ bị <strong>đổ</strong>! Cần góc an toàn.\n\nBây giờ, em đến <strong>bước 2</strong> — góc 30° có gì đặc biệt?');
+  }
+  if(phase===2&&Math.abs(angle-30)<=3){
+    showCel('🤯','Độ cao = một nửa!','Thang dài <strong>5m</strong>, góc <strong>30°</strong> → độ cao <strong>= 2.5m</strong> (chính xác ½!)\n\nTỉ lệ <strong>½</strong> này LUÔN đúng ở góc 30°, không phụ thuộc thang dài hay ngắn.\n\n<strong>sin(30°) = 0.5 = ½</strong>');
   }
 }
 
-window.nextPhase = function() {
-  if (phase < 3) {
-    phase++;
-    updatePhaseUI();
-    draw();
-    // Auto-reset target for new phase
-    attempts = 0;
-    if (phase === 2) {
-      // Reset target to far position
-      targetX = canvas.width * 0.85;
-      targetY = groundY;
-      targetR = 25;
+function showCel(e,t,p){
+  document.getElementById('cem').textContent=e;
+  document.getElementById('cet').textContent=t;
+  document.getElementById('cep').innerHTML=p.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+  document.getElementById('celeb').classList.add('show');
+}
+function dismissCeleb(){document.getElementById('celeb').classList.remove('show')}
+
+window.nextPhase=function(){
+  if(phase<4){
+    phase++;upUI();
+    if(phase===4){
+      document.getElementById('ceb').textContent='🎓 Hoàn thành!';
     }
-    showPhaseLabel('Phase ' + (phase + 1));
-    setTimeout(() => draw(), 800);
+    const pt=document.getElementById('pt');
+    pt.textContent=['','Nhìn kỹ hơn...','Thử góc 30°...','🤯 Tỉ lệ đặc biệt!','📖 Bí mật lượng giác'][phase];
+    pt.classList.add('show');
+    setTimeout(()=>pt.classList.remove('show'),1500);
+    draw();
+  }
+  if(phase===4){
+    showCel('🎓','Sin = Độ cao ÷ Chiều dài','<strong>sin(θ)</strong> = độ cao ÷ chiều dài thang = tỉ lệ giữa chiều cao và chiều dài thang.\n\n<em>sin(30°) = 0.5 → độ cao = ½ chiều dài</em>\n<em>sin(45°) = 0.707 → độ cao = 70.7% chiều dài</em>\n<em>sin(60°) = 0.866 → độ cao = 86.6% chiều dài</em>\n\n<strong>Cos(θ)</strong> = khoảng cách chân thang ÷ chiều dài.\n\nĐó là lý do em học <strong>BẢNG GIÁ TRỊ LƯỢNG GIÁC</strong> — sin và cos chính là <strong>tỉ lệ chia</strong> cho mỗi góc!');
   }
 };
 
-// === INIT ===
-setupTarget();
-updatePhaseUI();
-draw();
+function draw(){
+  c.clearRect(0,0,W,H);
+  const aRad=angle*Math.PI/180;
+  const sin=Math.sin(aRad);
+  const cos=Math.cos(aRad);
+  const h=L*sin;// height
+  const b=L*cos;// base
 
+  const groundY=H*0.82;
+  const wallX=W*0.15;
+
+  // Sky
+  const sky=c.createLinearGradient(0,0,0,groundY);
+  sky.addColorStop(0,'#d4e5ff');sky.addColorStop(1,'#f0f4ff');
+  c.fillStyle=sky;c.fillRect(0,0,W,groundY);
+
+  // Ground
+  c.fillStyle='#e8d9c1';c.fillRect(0,groundY,W,H-groundY);
+  c.strokeStyle='#c4a978';c.lineWidth=2;
+  c.beginPath();c.moveTo(0,groundY);c.lineTo(W,groundY);c.stroke();
+
+  // Wall
+  c.fillStyle='#d9d9d9';c.fillRect(wallX-8,groundY-250,8,250);
+  c.strokeStyle='#aaa';c.lineWidth=1;
+  for(let y=groundY-250;y<groundY;y+=20){
+    c.beginPath();c.moveTo(wallX-8,y);c.lineTo(wallX,y);c.stroke();
+  }
+
+  // Ladder
+  const tipX=wallX;
+  const tipY=groundY-h*scale;
+  const baseX=wallX+b*scale;
+  const baseY=groundY;
+
+  // Ladder rails
+  c.strokeStyle='#d97706';c.lineWidth=4;c.lineCap='round';
+  const offset=3;// spacing between rails
+  const perpX=Math.sin(aRad)*offset;
+  const perpY=Math.cos(aRad)*offset;
+  c.beginPath();c.moveTo(baseX-perpX,baseY-perpY);c.lineTo(tipX-perpX,tipY-perpY);c.stroke();
+  c.beginPath();c.moveTo(baseX+perpX,baseY+perpY);c.lineTo(tipX+perpX,tipY+perpY);c.stroke();
+
+  // Rungs
+  c.strokeStyle='rgba(217,119,6,0.5)';c.lineWidth=2;
+  const rungs=7;
+  for(let i=1;i<=rungs;i++){
+    const f=i/(rungs+1);
+    const rx=baseX+(tipX-baseX)*f;
+    const ry=baseY+(tipY-baseY)*f;
+    c.beginPath();
+    c.moveTo(rx-perpX,ry-perpY);
+    c.lineTo(rx+perpX,ry+perpY);
+    c.stroke();
+  }
+
+  // Height indicator (red)
+  c.setLineDash([4,3]);
+  c.strokeStyle='#ef4444';c.lineWidth=2;
+  c.beginPath();c.moveTo(wallX+25,groundY);c.lineTo(wallX+25,tipY+10);c.stroke();
+  c.setLineDash([]);
+
+  // Height arrow
+  c.strokeStyle='#ef4444';c.lineWidth=2;
+  c.beginPath();c.moveTo(wallX+25,groundY);c.lineTo(wallX+25,tipY+10);c.stroke();
+  c.fillStyle='#ef4444';
+  c.beginPath();c.moveTo(wallX+25,tipY+5);c.lineTo(wallX+20,tipY+15);c.lineTo(wallX+30,tipY+15);c.closePath();c.fill();
+
+  // Base indicator (blue)
+  c.setLineDash([4,3]);
+  c.strokeStyle='#3b82f6';c.lineWidth=2;
+  c.beginPath();c.moveTo(wallX,groundY+12);c.lineTo(baseX,groundY+12);c.stroke();
+  c.setLineDash([]);
+
+  // Base arrow
+  c.fillStyle='#3b82f6';
+  c.beginPath();c.moveTo(baseX-5,groundY+12);c.lineTo(baseX,groundY+7);c.lineTo(baseX,groundY+17);c.closePath();c.fill();
+
+  // Angle arc
+  c.strokeStyle='#7c3aed';c.lineWidth=2;
+  c.beginPath();c.arc(wallX,groundY,30,0,-aRad,true);
+  c.stroke();
+
+  // Angle label
+  c.fillStyle='#7c3aed';c.font='bold 14px sans-serif';c.textAlign='left';
+  c.fillText(angle+'°',wallX+35,groundY-10);
+
+  // Height text
+  c.fillStyle='#ef4444';c.font='bold 12px sans-serif';c.textAlign='left';
+  c.fillText('← '+h.toFixed(2)+'m',wallX+30,(groundY+tipY)/2);
+
+  // Base text
+  c.fillStyle='#3b82f6';c.font='bold 12px sans-serif';c.textAlign='center';
+  c.fillText(b.toFixed(2)+'m →',(wallX+baseX)/2,groundY+28);
+
+  // Person at base of ladder
+  const px=baseX-15;
+  c.strokeStyle='#6b7280';c.lineWidth=2;c.lineCap='round';
+  c.beginPath();c.arc(px,groundY-25,7,0,Math.PI*2);c.stroke();
+  c.beginPath();c.moveTo(px,groundY-18);c.lineTo(px,groundY-5);c.stroke();
+  c.beginPath();c.moveTo(px,groundY-5);c.lineTo(px-6,groundY);c.stroke();
+  c.beginPath();c.moveTo(px,groundY-5);c.lineTo(px+6,groundY);c.stroke();
+  // Arms (holding ladder)
+  c.beginPath();c.moveTo(px-3,groundY-14);c.lineTo(baseX-8,groundY-12);c.stroke();
+
+  // Update info cards
+  document.getElementById('iv').textContent=h.toFixed(2)+'m';
+  document.getElementById('bv').textContent=b.toFixed(2)+'m';
+}
+
+// Keyboard support
+document.addEventListener('keydown',function(e){
+  if(e.key==='ArrowRight'){
+    angle=Math.min(80,angle+1);
+    document.getElementById('sl').value=angle;
+    document.getElementById('av').textContent=angle+'°';
+    checkDiscoveries();draw();e.preventDefault();
+  }else if(e.key==='ArrowLeft'){
+    angle=Math.max(10,angle-1);
+    document.getElementById('sl').value=angle;
+    document.getElementById('av').textContent=angle+'°';
+    checkDiscoveries();draw();e.preventDefault();
+  }
+});
+
+// INIT
+upUI();
+draw();
 </script>
 </body>
 </html>
